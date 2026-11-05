@@ -12,6 +12,9 @@ artifacts/
 /settings.json
 /state.json
 /data/
+# Text exports of the legacy program: real names and dates.
+/Birthday.txt
+/Import.txt
 /Backup/
 # Local agent notes and history backups.
 .claude/

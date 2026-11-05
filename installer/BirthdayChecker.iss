@@ -1,6 +1,6 @@
 ; Inno Setup 6 script. Build with installer\build.ps1 (it publishes the app and passes the version).
 ; Per-user install: no admin rights, data (entries.json, settings.json, data\, Backup\) lives next to the exe
-; and is never touched by install, update or uninstall.
+; and is never touched by install, update or uninstall (a first install only seeds a starter entries.json).
 
 #ifndef AppVersion
   #error AppVersion is not set - build with installer\build.ps1 (it reads Directory.Build.props).
@@ -73,6 +73,9 @@ Type: filesandordirs; Name: "{app}\zh-Hant"; Check: IsUpgrade
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Starter list with holidays: first install into a folder without any entries file only. Never replaced,
+; never uninstalled — from then on it is the user's data.
+Source: "default-entries.json"; DestDir: "{app}"; DestName: "entries.json"; Flags: onlyifdoesntexist uninsneveruninstall; Check: NoEntriesYet
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
@@ -95,6 +98,15 @@ function IsUpgrade: Boolean;
 begin
   Result := RegValueExists(HKEY_CURRENT_USER,
     'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppGuid}_is1', 'UninstallString');
+end;
+
+// Leftovers of a lost entries.json must stay visible to the app (it asks to restore them), not be masked.
+function NoEntriesYet: Boolean;
+begin
+  Result := not IsUpgrade
+    and not FileExists(ExpandConstant('{app}\entries.json'))
+    and not FileExists(ExpandConstant('{app}\entries.json.tmp'))
+    and not FileExists(ExpandConstant('{app}\data\entries.json.bak'));
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
