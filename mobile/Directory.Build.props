@@ -3,7 +3,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
     <!-- 0.N.0 by task BDC-N until the app works for real, then 1.0.0; tags mobile-v<version>. -->
-    <Version>0.57.0</Version>
+    <Version>0.61.0</Version>
     <!-- Where `dotnet build -t:InstallAndroidDependencies` puts them without admin rights.
          Own JDK: the build cannot parse the 4-part version of a winget Microsoft OpenJDK (XA0033). -->
     <AndroidSdkDirectory Condition="'$(AndroidSdkDirectory)' == ''">$(LOCALAPPDATA)\Android\Sdk</AndroidSdkDirectory>

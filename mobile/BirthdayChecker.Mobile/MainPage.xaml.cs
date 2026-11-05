@@ -100,6 +100,8 @@ public partial class MainPage : ContentPage
 
 	private async void OnSettings(object? sender, EventArgs e) => await Navigation.PushAsync(new SettingsPage(this));
 
+	private async void OnCheckUpdates(object? sender, EventArgs e) => await Updates.CheckAsync(this, manual: true);
+
 	// A swipe either way opens the calendar (BDC-49, BDC-51); only while this page is on top.
 	private async void OnSwipe(bool right)
 	{
@@ -138,6 +140,7 @@ public partial class MainPage : ContentPage
 		// Each opening books the alarm again: a force-stop or a missing boot broadcast drops it.
 		Reminders.Schedule(Platform.AppContext);
 		_ = AskNotificationsAsync();
+		_ = Updates.CheckAsync(this, manual: false); // once a day at most; catches its own errors
 	}
 
 	/// <summary>The list through the search and filters, nearest first; the filter button shows how many are on.</summary>
