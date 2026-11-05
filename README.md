@@ -81,3 +81,7 @@ mobile\build.ps1                         # подписанный artifacts\Birt
 ```
 
 Задачи — ветки `BDC-N`, в `main` только через PR.
+
+## Лицензия
+
+[MIT](LICENSE).
