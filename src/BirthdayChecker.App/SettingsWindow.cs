@@ -21,6 +21,8 @@ internal sealed class SettingsWindow : Window
     private readonly ComboBox _interval = new() { Width = 140, HorizontalAlignment = HorizontalAlignment.Left };
     private readonly CheckBox _autostart = new() { Content = "Запускать вместе с Windows" };
     private readonly CheckBox _darkTheme = new() { Content = "Тёмная тема" };
+    private readonly CheckBox _checkUpdates = new() { Content = "Проверять при запуске и каждый день в", MinWidth = 0, Margin = new Thickness(0, 0, 8, 0) };
+    private readonly ComboBox _updateHour = new() { Width = 100 };
     private readonly TextBlock _autostartHint = new TextBlock { TextWrapping = TextWrapping.Wrap }.Hinted();
     private readonly ComboBox _position = new() { Width = 140, HorizontalAlignment = HorizontalAlignment.Left };
     // 90: with focus the dark theme's field keeps 56 for its padding and clear button.
@@ -56,6 +58,12 @@ internal sealed class SettingsWindow : Window
         _interval.SelectedIndex = Array.IndexOf(AppSettings.IntervalChoices, _s.CheckIntervalMinutes);
         _autostart.IsChecked = Autostart.IsEnabled;
         _darkTheme.IsChecked = _s.DarkTheme;
+        _updateHour.ItemsSource = Enumerable.Range(0, 24).Select(h => $"{h:00}:00").ToList();
+        _updateHour.SelectedIndex = _s.UpdateHour;
+        _checkUpdates.Checked += (_, _) => _updateHour.IsEnabled = true;
+        _checkUpdates.Unchecked += (_, _) => _updateHour.IsEnabled = false;
+        _checkUpdates.IsChecked = _s.CheckUpdates;
+        _updateHour.IsEnabled = _s.CheckUpdates;
         if (!Autostart.CanEnable)
         {
             _autostart.IsEnabled = false;
@@ -81,7 +89,8 @@ internal sealed class SettingsWindow : Window
             })),
             Row("", _autostart),
             Row("", _autostartHint, visible: _autostartHint.Text.Length > 0),
-            Row("", _darkTheme)));
+            Row("", _darkTheme),
+            Row("Обновления:", Line(_checkUpdates, _updateHour))));
         // Only the program's own window has these; a Windows notification looks and sounds as Windows sets it.
         var windowRows = new StackPanel();
         foreach (var row in new[]
@@ -268,6 +277,8 @@ internal sealed class SettingsWindow : Window
             Notification = ownWindow ? NotificationMode.Window : NotificationMode.Windows,
             ReminderColumns = _reminderColumns.Where(c => c.Box.IsChecked == true).Select(c => c.Name).ToList(),
             DarkTheme = _darkTheme.IsChecked == true,
+            CheckUpdates = _checkUpdates.IsChecked == true,
+            UpdateHour = Math.Max(0, _updateHour.SelectedIndex),
             CheckIntervalMinutes = AppSettings.IntervalChoices[Math.Max(0, _interval.SelectedIndex)],
             Position = Positions[Math.Max(0, _position.SelectedIndex)].Value,
             AutoCloseSeconds = autoClose,

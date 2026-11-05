@@ -32,6 +32,12 @@ public sealed partial record AppSettings
     public int BackupPeriodDays { get; init; } = 7;
 
     public int CheckIntervalMinutes { get; init; } = DefaultInterval;
+
+    /// <summary>Look for a new version at start and once a day; off leaves only the tray menu's check.</summary>
+    public bool CheckUpdates { get; init; } = true;
+
+    /// <summary>Hour (0–23) of the daily update check.</summary>
+    public int UpdateHour { get; init; } = 12;
     public NotificationMode Notification { get; init; } = NotificationMode.Window;
 
     /// <summary>Ticked columns of a reminder, name and date are always there; null = <see cref="ColumnCatalog.ReminderDefault"/>.</summary>
@@ -113,6 +119,7 @@ public sealed partial record AppSettings
         return this with
         {
             CheckIntervalMinutes = IntervalChoices.Contains(CheckIntervalMinutes) ? CheckIntervalMinutes : d.CheckIntervalMinutes,
+            UpdateHour = UpdateHour is >= 0 and <= 23 ? UpdateHour : d.UpdateHour,
             AutoCloseSeconds = AutoCloseSeconds is >= 0 and <= MaxAutoCloseSeconds ? AutoCloseSeconds : d.AutoCloseSeconds,
             BackupPeriodDays = BackupPeriodDays is >= 0 and <= MaxBackupPeriodDays ? BackupPeriodDays : d.BackupPeriodDays,
             Notification = Enum.IsDefined(Notification) ? Notification : d.Notification,
