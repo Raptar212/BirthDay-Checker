@@ -72,9 +72,13 @@
 - Ветка на задачу `BDC-N`, коммит и PR — `BDC-N: <описание>`, в `main` только PR (squash).
 
 ## Сборка и ловушки
-- Установщик: `installer\build.ps1` (Inno Setup 6) → `artifacts\` (не в git).
-- Мобилка: workload `maui-android`, Android SDK и свой JDK — в `%LocalAppData%\Android`
-  (`dotnet build -t:InstallAndroidDependencies`); JDK из winget сборка не распознаёт (XA0033).
+- ПК: `dotnet test` — гейт, `dotnet run --project src\BirthdayChecker.App` — запуск.
+- Установщик: `installer\build.ps1` (Inno Setup 6: `winget install JRSoftware.InnoSetup`) →
+  `artifacts\BirthdayChecker-Setup-<версия>.exe` (`artifacts\` не в git).
+- Мобилка, один раз: `dotnet workload install maui-android` (от администратора), затем Android SDK
+  и свой JDK в `%LocalAppData%\Android` — `dotnet build -t:InstallAndroidDependencies -f net10.0-android
+  mobile\BirthdayChecker.Mobile -p:AcceptAndroidSDKLicenses=true`; JDK из winget сборка не
+  распознаёт (XA0033).
 - Debug-APK из `dotnet build` на устройстве не запускается (Fast Deployment) — проверять Release `dotnet publish`.
 - Релиз мобилки: `mobile\build.ps1` подписывает ключом `bdc-release.keystore` + `bdc-release.password`
   из корня основной папки (в `.gitignore`, копия у владельца). Без того же ключа обновление на
