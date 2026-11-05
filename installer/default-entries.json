@@ -1,0 +1,45 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "name": "Новый год",
+      "eventType": "Праздник",
+      "date": { "kind": "fixed", "month": 1, "day": 1 },
+      "id": "f7a822c8-e54d-493a-bf90-73f24127235c",
+      "tags": [],
+      "reminders": "Day1"
+    },
+    {
+      "name": "Рождество Христово",
+      "eventType": "Праздник",
+      "date": { "kind": "fixed", "month": 1, "day": 7 },
+      "id": "dd1b0650-e822-47ab-a55a-4deea6356a50",
+      "tags": [],
+      "reminders": "Day1"
+    },
+    {
+      "name": "Пасха",
+      "eventType": "Праздник",
+      "date": { "kind": "easter", "offsetDays": 0 },
+      "id": "7aa9cf17-bfc6-410c-9a69-30a870216cf4",
+      "tags": [],
+      "reminders": "Day1"
+    },
+    {
+      "name": "День отца",
+      "eventType": "Праздник",
+      "date": { "kind": "nthWeekday", "month": 10, "weekday": "Sunday", "nth": 3 },
+      "id": "fad98a23-47a1-439c-b9eb-75ffe1f142e7",
+      "tags": [],
+      "reminders": "Day1"
+    },
+    {
+      "name": "День матери",
+      "eventType": "Праздник",
+      "date": { "kind": "nthWeekday", "month": 11, "weekday": "Sunday", "nth": -1 },
+      "id": "88c4ffdd-aec0-4825-bc2e-f2b4406afddd",
+      "tags": [],
+      "reminders": "Day1"
+    }
+  ]
+}
