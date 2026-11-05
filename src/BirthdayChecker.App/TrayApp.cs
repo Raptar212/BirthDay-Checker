@@ -1,6 +1,8 @@
 using System.IO;
 using System.Media;
+using System.Net.Http;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using BirthdayChecker.Core;
@@ -31,6 +33,7 @@ internal sealed class TrayApp : IDisposable
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _midnight = new();
     private readonly DispatcherTimer _snoozeEnd = new();
+    private readonly DispatcherTimer _updateTimer = new();
     private MediaPlayer? _player;   // created on first custom sound: the WPF media stack isn't free
     private AppSettings _settings = AppSettings.Load(SettingsPath);
     private TrayState _state = TrayState.Load(StatePath);
@@ -44,6 +47,9 @@ internal sealed class TrayApp : IDisposable
     private bool _checkPending;     // an automatic check that hit _busy runs right after the dialog closes
     private string? _lastAutoError; // an automatic check reports the same error once, not on every tick
     private string? _lastBackupError; // same for the automatic copy
+    private bool _updating;          // an update check or download is under way
+    private UpdateRelease? _balloonUpdate; // the release the last balloon offers; null when it said something else
+    private (UpdateRelease Release, string Path)? _downloaded; // verified installer waiting for open dialogs to close
 
     /// <summary>Construction only; nothing here can fail after the icon is visible. Call <see cref="Start"/> next.</summary>
     public TrayApp()
@@ -56,6 +62,16 @@ internal sealed class TrayApp : IDisposable
             ContextMenuStrip = _menu,
         };
         _icon.DoubleClick += (_, _) => OpenList();
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            if (_balloonUpdate is { } release)
+                OfferUpdate(release);
+        };
+        _updateTimer.Tick += (_, _) =>
+        {
+            ScheduleUpdateCheck();
+            CheckForUpdates(manual: false);
+        };
         ColorPick.LoadCustom = () => _settings.CustomColors ?? [];
         ColorPick.SaveCustom = colors => ChangeSettings(s => s with { CustomColors = colors });
         _timer.Tick += (_, _) => Check(manual: false);
@@ -83,6 +99,12 @@ internal sealed class TrayApp : IDisposable
         ApplyInterval();
         ScheduleMidnight();
         Check(manual: false); // check right away on start
+        if (_settings.CheckUpdates)
+        {
+            // A minute later: right after logon the network may not be up yet, and the reminder comes first.
+            _updateTimer.Interval = TimeSpan.FromMinutes(1);
+            _updateTimer.Start();
+        }
     }
 
     public void Dispose()
@@ -92,6 +114,7 @@ internal sealed class TrayApp : IDisposable
         _timer.Stop();
         _midnight.Stop();
         _snoozeEnd.Stop();
+        _updateTimer.Stop();
         _player?.Close();
         _icon.Visible = false;
         _icon.Icon?.Dispose();
@@ -107,6 +130,7 @@ internal sealed class TrayApp : IDisposable
         var open = menu.Items.Add("Открыть список", null, (_, _) => OpenList());
         open.Font = new System.Drawing.Font(open.Font, System.Drawing.FontStyle.Bold); // the double-click action
         menu.Items.Add("Проверить сейчас", null, (_, _) => Check(manual: true));
+        menu.Items.Add("Проверить обновления", null, (_, _) => CheckForUpdates(manual: true));
         menu.Items.Add("Настройки…", null, (_, _) => OpenSettings());
         menu.Items.Add("Импорт из старой программы…", null, (_, _) => Guarded(Import));
         menu.Items.Add(new Forms.ToolStripSeparator());
@@ -144,6 +168,7 @@ internal sealed class TrayApp : IDisposable
     {
         int oldInterval = _settings.CheckIntervalMinutes;
         bool oldTheme = _settings.DarkTheme;
+        var oldUpdates = (_settings.CheckUpdates, _settings.UpdateHour);
         _settings = change(_settings);
         try
         {
@@ -157,6 +182,8 @@ internal sealed class TrayApp : IDisposable
             ApplyInterval();
         if (_settings.DarkTheme != oldTheme)
             ApplyTheme();
+        if ((_settings.CheckUpdates, _settings.UpdateHour) != oldUpdates)
+            ScheduleUpdateCheck();
     }
 
     /// <summary>Both are WPF's built-in Fluent theme, so only colors change, never sizes. Open windows follow.</summary>
@@ -311,7 +338,7 @@ internal sealed class TrayApp : IDisposable
             if (due.Count == 0)
             {
                 if (manual)
-                    _icon.ShowBalloonTip(3000, Title, entries.Count == 0
+                    Balloon(3000, entries.Count == 0
                         ? "Список пуст — импортируйте записи из старой программы (меню трея)."
                         : "Грядущих событий не обнаружено.", Forms.ToolTipIcon.Info);
                 _window?.Close(); // e.g. after midnight yesterday's popup is stale
@@ -382,7 +409,14 @@ internal sealed class TrayApp : IDisposable
     /// need another target framework and an app id in the installer's shortcut.
     /// </summary>
     private void Notify(IReadOnlyList<Occurrence> items, AppSettings settings) =>
-        _icon.ShowBalloonTip(10000, Title, ReminderText.Notification(items, settings.ReminderColumns), Forms.ToolTipIcon.None);
+        Balloon(10000, ReminderText.Notification(items, settings.ReminderColumns), Forms.ToolTipIcon.None);
+
+    /// <summary>The tray's notification; a click on it offers <paramref name="update"/> when given.</summary>
+    private void Balloon(int milliseconds, string text, Forms.ToolTipIcon icon, UpdateRelease? update = null)
+    {
+        _balloonUpdate = update;
+        _icon.ShowBalloonTip(milliseconds, Title, text, icon);
+    }
 
     private void DismissToday(Guid id)
     {
@@ -496,6 +530,151 @@ internal sealed class TrayApp : IDisposable
         if (_checkPending)
             Check(manual: false);
     }
+
+    // ---- updates --------------------------------------------------------------------------
+
+    private void ScheduleUpdateCheck()
+    {
+        _updateTimer.Stop();
+        if (!_settings.CheckUpdates)
+            return;
+        var now = DateTime.Now;
+        // A minute ahead: a tick that comes a hair early must not find "today at the hour" still ahead and fire twice.
+        _updateTimer.Interval = UpdateCheck.NextDaily(now.AddMinutes(1), _settings.UpdateHour) - now;
+        _updateTimer.Start();
+    }
+
+    /// <summary>
+    /// Automatic: only a balloon, and only when there is a new version; a click on it asks.
+    /// Manual: asks right away, otherwise says why there is nothing.
+    /// </summary>
+    private async void CheckForUpdates(bool manual)
+    {
+        if (_updating)
+        {
+            if (manual)
+                Balloon(3000, "Обновление уже проверяется или скачивается.", Forms.ToolTipIcon.Info);
+            return;
+        }
+        _updating = true;
+        UpdateRelease? release;
+        try
+        {
+            release = await Updater.FindNewer();
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidDataException)
+        {
+            if (manual) // automatic: no network is normal, try again tomorrow
+                Balloon(5000, $"Не удалось проверить обновления: {Reason(e)}.", Forms.ToolTipIcon.Warning);
+            return;
+        }
+        finally
+        {
+            _updating = false;
+        }
+        if (release is null)
+        {
+            if (manual)
+                Balloon(3000, $"Установлена последняя версия ({Updater.Current.ToString(3)}).", Forms.ToolTipIcon.Info);
+        }
+        else if (manual)
+            OfferUpdate(release);
+        else
+            OfferLater(release);
+    }
+
+    private void OfferLater(UpdateRelease release) =>
+        Balloon(10000, $"Доступна версия {release.Version.ToString(3)} — нажмите, чтобы обновить.", Forms.ToolTipIcon.Info, release);
+
+    private void OfferUpdate(UpdateRelease release)
+    {
+        if (_updating)
+            return;
+        if (_busy)
+        {
+            OfferLater(release); // another dialog is open: ask once it is out of the way
+            return;
+        }
+        bool yes = false;
+        Guarded(() => yes = AskUpdate(release));
+        if (yes)
+            InstallUpdate(release);
+    }
+
+    private bool AskUpdate(UpdateRelease release)
+    {
+        var window = new Window
+        {
+            Title = Title, SizeToContent = SizeToContent.WidthAndHeight, ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen, Topmost = true, // a tray app's dialog must not open behind others
+        };
+        var update = new Button { Content = "Обновить", IsDefault = true, Margin = new Thickness(0, 0, 8, 0) }.Styled("MainButton");
+        update.Click += (_, _) => window.DialogResult = true;
+        var later = new Button { Content = "Позже", IsCancel = true }.Styled("MainButton");
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
+        buttons.Children.Add(update);
+        buttons.Children.Add(later);
+        var text = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Text = $"Доступна новая версия {release.Version.ToString(3)} (установлена {Updater.Current.ToString(3)}).\n\n" +
+                   "«Обновить» скачает установщик и запустит его, программа закроется. Записи и настройки сохранятся.",
+        };
+        var root = new StackPanel { Margin = new Thickness(16), MaxWidth = 420 };
+        root.Children.Add(text);
+        root.Children.Add(buttons);
+        window.Content = root;
+        return window.ShowDialog() == true;
+    }
+
+    /// <summary>
+    /// Downloads in the background; exits right after the installer starts, so its "close applications" page has nothing to close.
+    /// Not while a dialog is open (a download takes minutes, an editor may be opened meanwhile): exiting would drop its input.
+    /// </summary>
+    private async void InstallUpdate(UpdateRelease release)
+    {
+        if (_updating)
+            return;
+        _updating = true;
+        try
+        {
+            if (_downloaded is not { } d || d.Release != release)
+            {
+                Balloon(5000, $"Скачивается версия {release.Version.ToString(3)}…", Forms.ToolTipIcon.Info);
+                _downloaded = (release, await Updater.Download(release));
+            }
+            if (_busy || DialogOpen())
+            {
+                Balloon(10000, "Установщик скачан. Закройте окна программы и нажмите здесь, чтобы обновить.", Forms.ToolTipIcon.Info, release);
+                return;
+            }
+            Updater.Run(_downloaded.Value.Path);
+        }
+        catch (Exception e) // async void: anything left would crash the app; nothing here is worse than "not installed"
+        {
+            _downloaded = null;
+            Balloon(5000, $"Обновление не установлено: {Reason(e)}.", Forms.ToolTipIcon.Warning);
+            return;
+        }
+        finally
+        {
+            _updating = false;
+        }
+        Application.Current.Shutdown();
+    }
+
+    /// <summary>A window other than the list and the reminders: an editor, settings, a picker — each may hold unsaved input.</summary>
+    private bool DialogOpen() =>
+        Application.Current.Windows.OfType<Window>().Any(w => w != _list && w is not ReminderWindow);
+
+    /// <summary>In Russian: the network's own messages come in English.</summary>
+    private static string Reason(Exception e) => e switch
+    {
+        TaskCanceledException => "GitHub не ответил вовремя",
+        HttpRequestException { StatusCode: { } code } => $"GitHub ответил {(int)code}",
+        HttpRequestException => "нет связи с GitHub",
+        _ => e.Message,
+    };
 
     // ---- import ---------------------------------------------------------------------------
 
