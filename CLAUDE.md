@@ -1,7 +1,7 @@
 # BirthDay Checker
 
 Напоминалка о днях рождения для Windows (трей) и Android — замена старой Birthday v1.2.2.8
-(Delphi, 2012, без исходников; лежит у владельца локально, только чтение). Что умеет программа — `README.md`.
+(Delphi, 2012, без исходников; лежит у владельца локально, только чтение). Описание и установка — `README.md`.
 
 ## Старая программа
 - Записи — в `config.abs` (закрытый формат Absolute Database), напрямую не читаем. Перенос — из
@@ -64,8 +64,9 @@
   список — только после подтверждения.
 
 ## Версии и git
-- ПК — `<Version>` в `Directory.Build.props` и строка в `README.md`, мобилка —
-  `mobile/Directory.Build.props` (`versionCode` = major·10000 + minor·100 + patch, теги `mobile-v*`).
+- ПК — `<Version>` в `Directory.Build.props`, мобилка — `mobile/Directory.Build.props`
+  (`versionCode` = major·10000 + minor·100 + patch, теги `mobile-v*`); обе версии — в строке
+  версий `README.md`.
   До штатной работы — `0.N.0` по номеру задачи; после 1.0.0 каждое изменение — SemVer
   (функция — minor, исправление — patch), тем же PR.
 - Ветка на задачу `BDC-N`, коммит и PR — `BDC-N: <описание>`, в `main` только PR (squash).
