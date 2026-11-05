@@ -1,0 +1,138 @@
+<Window x:Class="BirthdayChecker.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:BirthdayChecker.App"
+        Title="BirthDay Checker" Width="1280" Height="600" MinWidth="800" MinHeight="420">
+    <DockPanel Margin="12">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <ContentControl x:Name="YearNav" DockPanel.Dock="Right" Height="32" Margin="12,0,0,4" VerticalAlignment="Top" Focusable="False"/>
+            <!-- Each group wraps as a whole; ItemHeight keeps every control of the bar the same height in both themes. -->
+            <WrapPanel ItemHeight="36">
+                <WrapPanel.Resources>
+                    <!-- Keyed: an implicit one would also reach the StackPanel inside the "Ещё" menu. -->
+                    <Style x:Key="Group" TargetType="StackPanel">
+                        <Setter Property="Orientation" Value="Horizontal"/>
+                        <Setter Property="Margin" Value="0,0,12,4"/>
+                    </Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                        <Setter Property="Margin" Value="0,0,6,0"/>
+                    </Style>
+                </WrapPanel.Resources>
+                <StackPanel Style="{StaticResource Group}">
+                    <Button Content="Новый (Ins)" Click="OnNew"/>
+                    <Button Content="Изменить (F2)" Click="OnEdit"/>
+                    <Button Content="Удалить (Del)" Click="OnDelete"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource Group}">
+                    <Button Content="Проверить сейчас" Click="OnCheck"/>
+                    <Button Content="Ещё ▾" Click="OnMore">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Отчёт: список грядущих праздников…" Click="OnReport"/>
+                                <Separator/>
+                                <MenuItem Header="Экспорт (CSV, TXT, MD, JSON)…" Click="OnExport"/>
+                                <MenuItem Header="Импорт (CSV, TXT, MD, JSON)…" Click="OnImport"/>
+                                <Separator/>
+                                <MenuItem Header="Резервная копия…" Click="OnBackup"/>
+                                <MenuItem Header="Восстановить из копии…" Click="OnRestore"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                </StackPanel>
+                <StackPanel Style="{StaticResource Group}">
+                    <Button Content="События" Click="OnEvents"/>
+                    <Button Content="Теги" Click="OnTags"/>
+                    <Button Content="Столбцы" Click="OnColumns"/>
+                    <Button Content="Настройки" Click="OnSettings"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource Group}">
+                    <Button x:Name="FilterButton" Click="OnFilter"/>
+                    <TextBlock VerticalAlignment="Center" Margin="6,0,4,0" Text="Поиск:" ToolTip="Ctrl+F"/>
+                    <TextBox x:Name="SearchBox" Width="130" VerticalContentAlignment="Center" ToolTip="Ctrl+F"
+                             TextChanged="OnFilterChanged"/>
+                </StackPanel>
+            </WrapPanel>
+        </DockPanel>
+        <TextBlock DockPanel.Dock="Bottom" x:Name="Status" Margin="0,6,0,0"/>
+        <local:CalendarView x:Name="Calendar" DockPanel.Dock="Right"/>
+        <Thumb DockPanel.Dock="Right" Width="12" Cursor="SizeWE" ToolTip="Потяните, чтобы изменить размер календаря"
+               DragDelta="OnCalendarResize" DragCompleted="OnCalendarResized">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="Transparent">
+                        <Border Width="2" CornerRadius="1" Background="{DynamicResource GridLine}"/>
+                    </Border>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
+        <DataGrid x:Name="Table" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended"
+                  CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserSortColumns="True"
+                  AlternationCount="2"
+                  HeadersVisibility="Column" GridLinesVisibility="All" VerticalGridLinesBrush="{DynamicResource GridLine}"
+                  HorizontalGridLinesBrush="{DynamicResource GridLine}" MouseDoubleClick="OnRowDoubleClick">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <!-- Not RowBackground / AlternatingRowBackground on the grid: their coercion overrides these triggers. -->
+                    <Setter Property="Background" Value="{DynamicResource RowBack}"/>
+                    <Style.Triggers>
+                        <!-- Order matters: later triggers win, so "today / soon" highlight beats the user's color. Colored rows are light in any theme: black text. -->
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="{DynamicResource RowAltBack}"/>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding HasColor}" Value="True">
+                            <Setter Property="Background" Value="{Binding RowBrush}"/>
+                            <Setter Property="Foreground" Value="Black"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Highlight}" Value="Soon">
+                            <Setter Property="Background" Value="#FFF4CC"/>
+                            <Setter Property="Foreground" Value="Black"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Highlight}" Value="Today">
+                            <Setter Property="Background" Value="#FFD9D9"/>
+                            <Setter Property="Foreground" Value="Black"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <!-- This style replaces the theme's own one, along with its row height. -->
+                    <Setter Property="MinHeight" Value="32"/>
+                    <Style.Triggers>
+                        <!-- Translucent stripes over the row's own color, with the row's own text color: any highlight stays recognizable. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush MappingMode="Absolute" SpreadMethod="Repeat" StartPoint="0,0" EndPoint="14,14">
+                                        <GradientStop Color="#38000000" Offset="0"/>
+                                        <GradientStop Color="#38000000" Offset="0.5"/>
+                                        <GradientStop Color="#38FFFFFF" Offset="0.5"/>
+                                        <GradientStop Color="#38FFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                        </Trigger>
+                        <!-- After the selection trigger, so it wins: arrow keys must show the current cell. -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource ButtonFocus}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.Columns>
+                <!-- MinWidth: the stretching last column squeezes the others down to it; past that the table scrolls. -->
+                <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="200" MinWidth="120"/>
+                <DataGridTextColumn Header="Дата" Binding="{Binding DateText}" SortMemberPath="SortDate" Width="180" MinWidth="90"/>
+                <DataGridTextColumn Header="Событие" Binding="{Binding Type}" Width="130" MinWidth="90"/>
+                <DataGridTextColumn Header="Теги" Binding="{Binding Tags}" Width="120" MinWidth="70"/>
+                <DataGridTextColumn Header="Возраст" Binding="{Binding Years}" Width="80" MinWidth="80"/>
+                <DataGridTextColumn Header="Через, дн." Binding="{Binding DaysText}" SortMemberPath="DaysLeft" Width="90" MinWidth="90"/>
+                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="130" MinWidth="90"/>
+                <DataGridTextColumn Header="Комментарий" Binding="{Binding Comment}" Width="200" MinWidth="110"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

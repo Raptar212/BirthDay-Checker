@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme: a dark status bar (MAUI paints it with colorPrimary), not a bright one above the black page (BDC-57). -->
+    <color name="colorPrimary">#1F1F1F</color>
+    <color name="colorPrimaryDark">#1F1F1F</color>
+    <color name="colorAccent">#E8A39B</color>
+</resources>

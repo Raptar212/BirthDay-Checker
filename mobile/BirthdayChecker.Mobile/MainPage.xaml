@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:BirthdayChecker.Mobile"
+             x:Class="BirthdayChecker.Mobile.MainPage"
+             Title="BirthDay Checker">
+
+    <ContentPage.ToolbarItems>
+        <!-- All in the ⋮ menu: the title fits, and "+" below adds an entry (BDC-56). -->
+        <ToolbarItem Text="Открыть файл" Order="Secondary" Clicked="OnOpenFile" />
+        <ToolbarItem Text="Добавить из файла" Order="Secondary" Clicked="OnAddFromFile" />
+        <ToolbarItem Text="Поделиться" Order="Secondary" Clicked="OnShare" />
+        <ToolbarItem Text="Настройки" Order="Secondary" Clicked="OnSettings" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Search by name, comment and phone; month, event and tag filters behind one button, as on the PC. -->
+        <Grid Margin="8,8,16,0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <SearchBar x:Name="SearchBox" Placeholder="Имя, телефон, комментарий" TextChanged="OnSearch" />
+            <Button x:Name="FilterButton" Grid.Column="1" Text="Фильтр" Clicked="OnFilter" VerticalOptions="Center" />
+        </Grid>
+
+        <CollectionView x:Name="List" Grid.Row="1" Margin="8,0">
+            <!-- Room under the last row, so "+" never covers it. -->
+            <CollectionView.Footer>
+                <ContentView HeightRequest="88" />
+            </CollectionView.Footer>
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="0,40" Spacing="16">
+                    <Label x:Name="EmptyText" HorizontalTextAlignment="Center" />
+                    <Button x:Name="EmptyOpenButton" Text="Открыть файл" Clicked="OnOpenFile" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="local:Row">
+                    <!-- The line under each entry separates them. -->
+                    <!-- A colored row (today, next 7 days, the entry's or its tag's color) is light with black text in any theme, as on the PC. -->
+                    <VerticalStackLayout>
+                        <VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnPick" />
+                        </VerticalStackLayout.GestureRecognizers>
+                        <!-- Two lines: the name and, on the right, when — what the eye looks for; then date, event, age, tags (BDC-56). -->
+                        <!-- Dark theme: the row's color is a stripe on the left, not a light patch on black (BDC-57). -->
+                        <Grid ColumnDefinitions="6,*" BackgroundColor="{Binding Back}">
+                        <ContentView BackgroundColor="{Binding Stripe}" />
+                        <Grid Grid.Column="1" Padding="4,8,8,8" ColumnDefinitions="*,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto">
+                            <!-- Triggers, not a binding or a local style: an uncolored row keeps the theme's text color. -->
+                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" LineBreakMode="TailTruncation">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Colored}" Value="True">
+                                        <Setter Property="TextColor" Value="Black" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Label Grid.Column="1" Text="{Binding When}" FontAttributes="Bold" FontSize="15" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Colored}" Value="True">
+                                        <Setter Property="TextColor" Value="Black" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Details}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Colored}" Value="True">
+                                        <Setter Property="TextColor" Value="Black" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Grid>
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#D0D0D0, Dark=#505050}" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- The everyday action, where Android apps keep it. -->
+        <Button x:Name="AddButton" Grid.Row="1" Text="+" Clicked="OnAdd" FontSize="30" Padding="0"
+                WidthRequest="60" HeightRequest="60" CornerRadius="30" Margin="0,0,20,24"
+                HorizontalOptions="End" VerticalOptions="End"
+                SemanticProperties.Description="Добавить запись" />
+    </Grid>
+
+</ContentPage>

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/mobile/">
+    <Project Path="BirthdayChecker.Mobile/BirthdayChecker.Mobile.csproj" />
+  </Folder>
+  <Folder Name="/shared/">
+    <Project Path="../src/BirthdayChecker.Core/BirthdayChecker.Core.csproj" />
+    <Project Path="../tests/BirthdayChecker.Tests/BirthdayChecker.Tests.csproj" />
+  </Folder>
+</Solution>

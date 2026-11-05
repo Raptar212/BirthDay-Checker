@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BirthdayChecker.Mobile.EditorPage">
+
+    <!-- In the bar, so it is always in reach without scrolling the form (BDC-55). -->
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Сохранить" Clicked="OnSave" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="4">
+            <Label Text="Имя" />
+            <Entry x:Name="NameBox" />
+
+            <Label Text="Событие" Margin="0,8,0,0" />
+            <Picker x:Name="TypeBox" Title="Событие" />
+
+            <Label Text="Дата" Margin="0,8,0,0" />
+            <Picker x:Name="KindBox" Title="Вид даты" SelectedIndexChanged="OnKindChanged" />
+            <!-- One of the three panels is shown, by the kind above. -->
+            <Grid x:Name="FixedPanel" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Picker x:Name="DayBox" Title="День" />
+                <Picker x:Name="MonthBox" Grid.Column="1" Title="Месяц" />
+                <Entry x:Name="YearBox" Grid.Column="2" Placeholder="год" Keyboard="Numeric" WidthRequest="80" />
+            </Grid>
+            <Grid x:Name="NthPanel" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" IsVisible="False">
+                <Picker x:Name="NthBox" Title="Который" />
+                <Picker x:Name="WeekdayBox" Grid.Column="1" Title="День недели" />
+                <Picker x:Name="NthMonthBox" Grid.Column="2" Title="Месяц" />
+            </Grid>
+            <HorizontalStackLayout x:Name="EasterPanel" Spacing="8" IsVisible="False">
+                <Label Text="Пасха +" VerticalOptions="Center" />
+                <Entry x:Name="OffsetBox" Keyboard="Numeric" WidthRequest="80" />
+                <Label Text="дн. (49 — Троица, 9 — Радоница)" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Label Text="Телефон" Margin="0,8,0,0" />
+            <Entry x:Name="PhoneBox" Keyboard="Telephone" />
+
+            <Label Text="Комментарий" Margin="0,8,0,0" />
+            <Editor x:Name="CommentBox" AutoSize="TextChanges" />
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                <Label Text="Теги" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Новый тег…" Clicked="OnNewTag" />
+            </Grid>
+            <!-- A tick per known tag, wrapped into rows; filled in code. -->
+            <FlexLayout x:Name="TagsPanel" Wrap="Wrap" />
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                <Label Text="Напомнить заранее" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Вкл/Откл все" Clicked="OnToggleAll" />
+            </Grid>
+            <!-- Days, weeks, months in columns, as on the PC; filled in code. -->
+            <Grid x:Name="RemindersGrid" ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" />
+
+            <!-- Alone at the very end and outlined in red, so it is never hit instead of saving (BDC-55). -->
+            <Button x:Name="DeleteButton" Text="Удалить запись" Clicked="OnDelete" Margin="0,24,0,0"
+                    BackgroundColor="Transparent" BorderWidth="1"
+                    BorderColor="{AppThemeBinding Light=#B3261E, Dark=#F2B8B5}"
+                    TextColor="{AppThemeBinding Light=#B3261E, Dark=#F2B8B5}" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

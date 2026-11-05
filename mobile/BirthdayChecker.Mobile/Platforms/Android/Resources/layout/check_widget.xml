@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The 1x1 "check now" widget (BDC-50): the app icon and a label, like a launcher shortcut. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/check_widget_root"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:gravity="center"
+	android:orientation="vertical"
+	android:padding="2dp">
+	<ImageView
+		android:layout_width="44dp"
+		android:layout_height="44dp"
+		android:contentDescription="@null"
+		android:src="@mipmap/appicon" />
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="2dp"
+		android:maxLines="1"
+		android:shadowColor="#B0000000"
+		android:shadowRadius="3"
+		android:text="Проверить"
+		android:textColor="#FFFFFFFF"
+		android:textSize="12sp" />
+</LinearLayout>

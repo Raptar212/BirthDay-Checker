@@ -1,0 +1,81 @@
+<Window x:Class="BirthdayChecker.App.EditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Запись" Width="540" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel Margin="12">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Style="{StaticResource MainButton}" Content="Сохранить" IsDefault="True" Click="OnSave" Margin="0,0,8,0"/>
+            <Button Style="{StaticResource MainButton}" Content="Отмена" IsCancel="True"/>
+        </StackPanel>
+        <!-- Save and Cancel stay visible on any screen: only the form scrolls. The scroll bar lives in the window's margin. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,-12,0">
+            <StackPanel Margin="0,0,12,0">
+                <StackPanel.Resources>
+                    <Style x:Key="HintText" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{DynamicResource Hint}"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Margin" Value="6,0,0,0"/>
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                    </Style>
+                </StackPanel.Resources>
+
+                <TextBlock Text="Имя *"/>
+                <TextBox x:Name="NameBox" Margin="0,2,0,8"/>
+
+                <TextBlock Text="Событие *"/>
+                <ComboBox x:Name="TypeBox" IsEditable="True" Margin="0,2,0,8"/>
+
+                <TextBlock Text="Дата *"/>
+                <WrapPanel Margin="0,2,0,4">
+                    <RadioButton x:Name="FixedRadio" Content="Число" GroupName="Kind" Margin="0,0,14,0" Checked="OnKindChanged"/>
+                    <RadioButton x:Name="NthRadio" Content="День недели месяца" GroupName="Kind" Margin="0,0,14,0" Checked="OnKindChanged"/>
+                    <RadioButton x:Name="EasterRadio" Content="От Пасхи" GroupName="Kind" Checked="OnKindChanged"/>
+                </WrapPanel>
+                <WrapPanel x:Name="FixedPanel" Margin="0,0,0,8">
+                    <ComboBox x:Name="DayBox" Width="80"/>
+                    <ComboBox x:Name="MonthBox" Width="130" Margin="6,0"/>
+                    <TextBox x:Name="YearBox" Width="90" VerticalContentAlignment="Center"/>
+                    <TextBlock Style="{StaticResource HintText}" Text="год (пусто — неизвестен)"/>
+                </WrapPanel>
+                <WrapPanel x:Name="NthPanel" Margin="0,0,0,8">
+                    <ComboBox x:Name="NthBox" Width="110"/>
+                    <ComboBox x:Name="WeekdayBox" Width="150" Margin="6,0"/>
+                    <ComboBox x:Name="NthMonthBox" Width="130"/>
+                </WrapPanel>
+                <WrapPanel x:Name="EasterPanel" Margin="0,0,0,8">
+                    <TextBox x:Name="OffsetBox" Width="90" VerticalContentAlignment="Center"/>
+                    <TextBlock Style="{StaticResource HintText}"
+                               Text="дней от Пасхи: Пасха 0 · Радоница 9 · Троица 49 · начало Великого поста −48"/>
+                </WrapPanel>
+
+                <TextBlock Text="Телефон"/>
+                <TextBox x:Name="PhoneBox" Margin="0,2,0,8"/>
+
+                <TextBlock Text="Комментарий"/>
+                <TextBox x:Name="CommentBox" Margin="0,2,0,8" Height="50" AcceptsReturn="True"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+
+                <StackPanel x:Name="CustomPanel"/>
+
+                <TextBlock Text="Теги (список — кнопка «Теги» в главном окне)"/>
+                <Button x:Name="TagsButton" Margin="0,2,0,8" HorizontalContentAlignment="Left"
+                        MinHeight="{Binding ActualHeight, ElementName=PhoneBox}"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Цвет строки в списке:" VerticalAlignment="Center"/>
+                    <Border x:Name="ColorSwatch" Width="40" Height="18" Margin="6,0" BorderBrush="Gray" BorderThickness="1"/>
+                    <Button Style="{StaticResource SmallButton}" Content="Выбрать…" Click="OnPickColor"/>
+                    <Button Style="{StaticResource SmallButton}" Content="Без цвета" Click="OnClearColor" Margin="6,0,0,0"/>
+                </StackPanel>
+
+                <Border Style="{StaticResource Card}" Margin="0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardTitle}" Text="Напомнить заранее (в день события — всегда)"/>
+                        <Grid x:Name="RemindersGrid"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

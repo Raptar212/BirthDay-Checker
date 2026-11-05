@@ -1,0 +1,13 @@
+.idea/
+.vs/
+.omc/
+bin/
+obj/
+*.user
+TestResults/
+graphify-out/
+artifacts/
+/entries.json
+# Android release signing key and its password: outside git, back them up separately (mobile/build.ps1).
+/bdc-release.keystore
+/bdc-release.password

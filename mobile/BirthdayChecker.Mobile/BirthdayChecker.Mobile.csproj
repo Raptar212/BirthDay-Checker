@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- Android only: iOS needs a Mac, the desktop app is the WPF one in src/. -->
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>BirthdayChecker.Mobile</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<MauiXamlInflator>SourceGen</MauiXamlInflator>
+
+		<ApplicationTitle>BirthDay Checker</ApplicationTitle>
+		<!-- Fixed forever: Android identifies the app by it for updates. -->
+		<ApplicationId>com.zlatous.birthdaychecker</ApplicationId>
+
+		<!-- Both follow <Version> in mobile/Directory.Build.props. Android installs an update only with a larger
+		     versionCode, so it is computed: major*10000 + minor*100 + patch (0.43.0 → 4300, 1.2.3 → 10203);
+		     minor and patch stay below 100. -->
+		<ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+		<ApplicationVersion>$([MSBuild]::Add($([MSBuild]::Add($([MSBuild]::Multiply($([System.Version]::Parse('$(Version)').Major), 10000)), $([MSBuild]::Multiply($([System.Version]::Parse('$(Version)').Minor), 100)))), $([System.Version]::Parse('$(Version)').Build)))</ApplicationVersion>
+		<!-- Installed from a file, not Google Play: no .aab. -->
+		<AndroidPackageFormats>apk</AndroidPackageFormats>
+
+		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+		<!-- Release trims .NET message texts to bare keys ("JsonRequiredPropertiesMissing"); file errors are shown to the user. -->
+		<UseSystemResourceKeys>false</UseSystemResourceKeys>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- As on the PC (src/BirthdayChecker.App/Assets/app.ico): white "BDC" on a red gradient. -->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.png" Color="#D94540" />
+		<MauiSplashScreen Include="Resources\Splash\splash.png" Color="#D94540" BaseSize="192,192" />
+		<MauiImage Include="Resources\Images\*" />
+		<MauiFont Include="Resources\Fonts\*" />
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\BirthdayChecker.Core\BirthdayChecker.Core.csproj" />
+	</ItemGroup>
+
+</Project>

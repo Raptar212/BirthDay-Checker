@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Only for the tray icon (NotifyIcon); WPF has none. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>BirthdayChecker</AssemblyName>
+    <RootNamespace>BirthdayChecker.App</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Product>BirthDay Checker</Product>
+    <!-- The app's name in the header of a Windows notification. -->
+    <AssemblyTitle>BirthDay Checker</AssemblyTitle>
+    <Copyright>Zlatous Leha</Copyright>
+    <!-- Application.ThemeMode (dark theme) is still marked experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Also a WPF resource: windows and the tray icon load it from here. -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Keep WPF types unambiguous (Application, MessageBox, ...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BirthdayChecker.Core\BirthdayChecker.Core.csproj" />
+  </ItemGroup>
+
+</Project>

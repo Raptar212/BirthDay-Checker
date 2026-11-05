@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BirthdayChecker.App/BirthdayChecker.App.csproj" />
+    <Project Path="src/BirthdayChecker.Core/BirthdayChecker.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BirthdayChecker.Tests/BirthdayChecker.Tests.csproj" />
+  </Folder>
+</Solution>
