@@ -4,5 +4,6 @@
 	<!-- Reminder notification (asked at start on Android 13+) and booking it again after a reboot. -->
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-	<!-- Offline app: no network permissions (Debug builds add INTERNET for the debugger themselves). -->
+	<!-- Only for the update check (BDC-61): one request to GitHub's release list; the records never leave the phone this way. -->
+	<uses-permission android:name="android.permission.INTERNET" />
 </manifest>

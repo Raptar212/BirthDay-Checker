@@ -10,6 +10,7 @@
         <ToolbarItem Text="Открыть файл" Order="Secondary" Clicked="OnOpenFile" />
         <ToolbarItem Text="Добавить из файла" Order="Secondary" Clicked="OnAddFromFile" />
         <ToolbarItem Text="Поделиться" Order="Secondary" Clicked="OnShare" />
+        <ToolbarItem Text="Проверить обновления" Order="Secondary" Clicked="OnCheckUpdates" />
         <ToolbarItem Text="Настройки" Order="Secondary" Clicked="OnSettings" />
     </ContentPage.ToolbarItems>
 

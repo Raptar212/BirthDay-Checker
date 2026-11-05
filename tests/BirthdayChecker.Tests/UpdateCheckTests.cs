@@ -108,6 +108,62 @@ public sealed class UpdateCheckTests
     [InlineData("{\"tag_name\":\"v2.3.0\",\"assets\":{}}")]
     public void Parse_GarbageIsNull(string json) => Assert.Null(UpdateCheck.Parse(json));
 
+    /// <summary>A phone release as GitHub lists it: always a pre-release, an APK beside it.</summary>
+    private static JsonObject MobileRelease(string version, bool draft = false) => new()
+    {
+        ["tag_name"] = "mobile-v" + version,
+        ["draft"] = draft,
+        ["prerelease"] = true,
+        ["assets"] = new JsonArray(new JsonObject
+        {
+            ["name"] = $"BirthdayChecker-Mobile-{version}.apk",
+            ["browser_download_url"] = $"{Download}mobile-v{version}/BirthdayChecker-Mobile-{version}.apk",
+            ["digest"] = "sha256:" + Hash,
+        }),
+    };
+
+    [Fact]
+    public void ParseMobile_PicksNewestPhoneReleaseOfTheList()
+    {
+        // Not in version order, mixed with the PC's releases and a newer draft.
+        var list = new JsonArray(Release("v9.0.0"), MobileRelease("0.57.0"), MobileRelease("0.61.0"), MobileRelease("0.9.0"),
+            MobileRelease("1.0.0", draft: true));
+        var r = UpdateCheck.ParseMobile(list.ToJsonString())!;
+        Assert.Equal(new Version(0, 61, 0), r.Version);
+        Assert.Equal(Download + "mobile-v0.61.0/BirthdayChecker-Mobile-0.61.0.apk", r.Installer.ToString());
+        Assert.Equal(Hash, r.Sha256);
+    }
+
+    [Fact]
+    public void ParseMobile_SkipsReleaseWithoutUsableApk()
+    {
+        var broken = MobileRelease("0.62.0");
+        ((JsonObject)broken["assets"]![0]!)["browser_download_url"] = "https://example.com/BirthdayChecker-Mobile-0.62.0.apk";
+        var list = new JsonArray(broken, MobileRelease("0.57.0"));
+        Assert.Equal(new Version(0, 57, 0), UpdateCheck.ParseMobile(list.ToJsonString())!.Version);
+        Assert.Equal(new Version(0, 62, 0), UpdateCheck.MobileTagVersion(list.ToJsonString())); // so a manual check can say so
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("not json")]
+    [InlineData("[{\"tag_name\":\"v2.3.0\"}]")]
+    public void ParseMobile_NoPhoneReleaseIsNull(string json)
+    {
+        Assert.Null(UpdateCheck.ParseMobile(json));
+        Assert.Null(UpdateCheck.MobileTagVersion(json));
+    }
+
+    [Fact]
+    public void Parse_IgnoresPhoneRelease()
+    {
+        var phone = MobileRelease("0.61.0");
+        phone["prerelease"] = false; // even if one were ever published as "latest"
+        Assert.Null(UpdateCheck.Parse(phone.ToJsonString()));
+        Assert.Null(UpdateCheck.TagVersion(phone.ToJsonString()));
+    }
+
     [Theory]
     [InlineData("2.3.0", "2.2.0.0", true)]
     [InlineData("2.2.1", "2.2.0.0", true)]

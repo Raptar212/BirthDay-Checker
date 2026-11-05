@@ -65,6 +65,12 @@ public sealed class SettingsPage : ContentPage
 		root.Add(ColorRow("Сегодня", () => _owner.Settings.TodayColor, c => s => s with { TodayColor = c }));
 		root.Add(ColorRow("Несколько событий в день", () => _owner.Settings.SeveralColor, c => s => s with { SeveralColor = c }));
 
+		root.Add(Header("Обновления"));
+		var updates = new CheckBox { IsChecked = Updates.Enabled };
+		updates.CheckedChanged += (_, e) => Updates.Enabled = e.Value;
+		root.Add(new HorizontalStackLayout { updates, Text("Проверять при открытии (раз в день)") });
+		root.Add(new Label { Text = $"Версия {AppInfo.Current.VersionString}. Вручную — ⋮ → «Проверить обновления».", FontSize = 12 });
+
 		root.Add(Header("Списки"));
 		var tags = new Button { Text = "Теги…" };
 		tags.Clicked += async (_, _) => await Navigation.PushAsync(new TagsPage(_owner));
