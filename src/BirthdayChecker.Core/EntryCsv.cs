@@ -120,7 +120,7 @@ public static class EntryCsv
             .GroupBy(c => c.name, Ci).ToDictionary(g => g.Key, g => g.First().i, Ci);
         var missing = Header.Where(h => h != "Id" && !columns.ContainsKey(h)).ToList();
         if (missing.Count > 0)
-            return new ImportResult([], [new ImportIssue(rows[0].Line, "", $"нет колонок: {string.Join(", ", missing)} — это не экспорт BirthDay Checker? (Import.txt старой программы импортируется из меню трея)")]);
+            return new ImportResult([], [new ImportIssue(rows[0].Line, "", $"нет колонок: {string.Join(", ", missing)} — это не экспорт BirthDay Checker?")]);
 
         // Any other column is the user's own, whatever made the file: its values must not vanish on import.
         var others = columns.Keys.Where(c => c.Length > 0 && !Header.Contains(c, Ci)).ToList();

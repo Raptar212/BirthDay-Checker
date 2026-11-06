@@ -2,6 +2,11 @@ using System.Text;
 
 namespace BirthdayChecker.Core;
 
+/// <summary>Something the user should look at after import. <see cref="Line"/> is 1-based.</summary>
+public sealed record ImportIssue(int Line, string Name, string Message);
+
+public sealed record ImportResult(IReadOnlyList<Entry> Entries, IReadOnlyList<ImportIssue> Issues);
+
 /// <summary>
 /// Export and import by file extension: .csv (Excel), .txt (tab-separated), .md (table), .json (entries.json format).
 /// Every format keeps every field; merging into the list is up to the caller (see <see cref="EntryCsv.Merge"/>).
