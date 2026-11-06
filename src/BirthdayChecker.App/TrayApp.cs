@@ -132,7 +132,6 @@ internal sealed class TrayApp : IDisposable
         menu.Items.Add("Проверить сейчас", null, (_, _) => Check(manual: true));
         menu.Items.Add("Проверить обновления", null, (_, _) => CheckForUpdates(manual: true));
         menu.Items.Add("Настройки…", null, (_, _) => OpenSettings());
-        menu.Items.Add("Импорт из старой программы…", null, (_, _) => Guarded(Import));
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Выход", null, (_, _) => Application.Current.Shutdown());
         return menu;
@@ -339,7 +338,7 @@ internal sealed class TrayApp : IDisposable
             {
                 if (manual)
                     Balloon(3000, entries.Count == 0
-                        ? "Список пуст — импортируйте записи из старой программы (меню трея)."
+                        ? "Список пуст — добавьте записи в главном окне."
                         : "Грядущих событий не обнаружено.", Forms.ToolTipIcon.Info);
                 _window?.Close(); // e.g. after midnight yesterday's popup is stale
             }
@@ -675,66 +674,6 @@ internal sealed class TrayApp : IDisposable
         HttpRequestException => "нет связи с GitHub",
         _ => e.Message,
     };
-
-    // ---- import ---------------------------------------------------------------------------
-
-    private void Import()
-    {
-        var dialog = new OpenFileDialog
-        {
-            Title = "Файл экспорта старой программы (Import.txt)",
-            Filter = "Текстовый экспорт (*.txt)|*.txt",
-        };
-        if (dialog.ShowDialog() != true)
-            return;
-
-        var current = LoadEntries(manual: true);
-        if (current is null)
-            return; // never overwrite a file we could not read
-
-        ImportResult result;
-        try
-        {
-            result = LegacyImport.ReadFile(dialog.FileName);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            Warn($"Не удалось прочитать файл: {e.Message}");
-            return;
-        }
-        if (result.Entries.Count == 0)
-        {
-            Warn("В файле не найдено ни одной записи.\n\n" + Report(result));
-            return;
-        }
-        // Ask whenever the file exists, even if empty: .bak may still hold the real list.
-        if (File.Exists(EntriesPath) && Show(
-                $"Заменить текущий список ({current.Count}) на импортированный ({result.Entries.Count})?\n" +
-                @"Текущий список сохранится в data\entries.json.bak, предыдущая копия .bak будет перезаписана.",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-            return;
-
-        try
-        {
-            EntryStorage.Save(EntriesPath, result.Entries);
-        }
-        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
-        {
-            Warn($"Записи не сохранены: {e.Message}\n" +
-                 @"Если entries.json пропал — восстановите его из data\entries.json.bak.");
-            return;
-        }
-
-        _list?.Reload();
-        Show($"Импортировано записей: {result.Entries.Count}.\n\n" + Report(result),
-            MessageBoxButton.OK, MessageBoxImage.Information);
-        _busy = false;
-        Check(manual: true);
-    }
-
-    private static string Report(ImportResult result) => result.Issues.Count == 0
-        ? "Замечаний нет."
-        : "Проверьте вручную:\n" + string.Join("\n", result.Issues.Select(i => $"строка {i.Line}: {i.Name} — {i.Message}"));
 
     private static void Warn(string message) => Show(message, MessageBoxButton.OK, MessageBoxImage.Warning);
 
