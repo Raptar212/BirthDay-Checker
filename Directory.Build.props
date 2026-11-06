@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>latest</LangVersion>
-    <!-- SemVer since 1.0.0: feature bumps minor, fix bumps patch; see CLAUDE.md -> Versions -->
-    <Version>2.5.0</Version>
+    <!-- Since 1.0.0: small update bumps the 3rd digit, large the 2nd, the 1st only by agreement; see CLAUDE.md -> Versions -->
+    <Version>2.4.1</Version>
   </PropertyGroup>
 </Project>
