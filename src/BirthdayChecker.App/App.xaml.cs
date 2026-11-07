@@ -55,7 +55,7 @@ public partial class App : Application
         }
 
         _tray = new TrayApp();
-        _tray.Start();
+        _tray.Start(openList: e.Args.Contains("--open"));
     }
 
     protected override void OnExit(ExitEventArgs e)
