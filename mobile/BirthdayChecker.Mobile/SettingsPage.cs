@@ -69,6 +69,17 @@ public sealed class SettingsPage : ContentPage
 		var updates = new CheckBox { IsChecked = Updates.Enabled };
 		updates.CheckedChanged += (_, e) => Updates.Enabled = e.Value;
 		root.Add(new HorizontalStackLayout { updates, Text("Проверять при открытии (раз в день)") });
+		if (SelfUpdate.SilentSupported) // Android 8–11 always ask before installing
+		{
+			var silent = new CheckBox { IsChecked = Updates.Silent };
+			silent.CheckedChanged += (_, e) =>
+			{
+				Updates.Silent = e.Value;
+				if (e.Value && !SelfUpdate.CanInstall)
+					SelfUpdate.AskPermission();
+			};
+			root.Add(new HorizontalStackLayout { silent, Text("Устанавливать без вопросов (по Wi-Fi)") });
+		}
 		root.Add(new Label { Text = $"Версия {AppInfo.Current.VersionString}. Вручную — ⋮ → «Проверить обновления».", FontSize = 12 });
 
 		root.Add(Header("Списки"));
