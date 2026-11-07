@@ -11,7 +11,7 @@
     },
     {
       "name": "Рождество Христово",
-      "eventType": "Праздник",
+      "eventType": "Религиозный",
       "date": { "kind": "fixed", "month": 1, "day": 7 },
       "id": "dd1b0650-e822-47ab-a55a-4deea6356a50",
       "tags": [],
@@ -19,7 +19,7 @@
     },
     {
       "name": "Пасха",
-      "eventType": "Праздник",
+      "eventType": "Религиозный",
       "date": { "kind": "easter", "offsetDays": 0 },
       "id": "7aa9cf17-bfc6-410c-9a69-30a870216cf4",
       "tags": [],

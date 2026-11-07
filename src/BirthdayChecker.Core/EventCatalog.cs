@@ -18,8 +18,7 @@ public static class EventCatalog
     private static readonly EventDefinition[] Defaults =
     [
         new("День Рождения", "#3F7FBF"),
-        new("Годовщина свадьбы", "#C2559B"),
-        new("Именины", "#3E9E6B"),
+        new("Религиозный", "#3E9E6B"),
         new("Праздник", "#D98A1F"),
         new("Поминки", "#6B6B6B"),
     ];

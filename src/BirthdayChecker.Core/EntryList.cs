@@ -6,7 +6,7 @@ public sealed record ListFilter(int? Month = null, string? EventType = null, str
 /// <summary>What the main window shows: filtering, search, default order and the choice lists.</summary>
 public static class EntryList
 {
-    public static readonly string[] DefaultTags = ["семья", "друзья", "коллеги", "религиозный", "частный", "регулярный"];
+    public static readonly string[] DefaultTags = ["семья", "друзья", "коллеги", "именины", "частный", "регулярный"];
 
     private static readonly StringComparer Ci = StringComparer.CurrentCultureIgnoreCase;
 

@@ -12,8 +12,7 @@ public class EventCatalogTests
     public void Merge_DefaultsUntilEdited_ThenUsedTypesLast()
     {
         var merged = EventCatalog.Merge(null, [Of("Свой тип"), Of("праздник")]);
-        Assert.Equal("День Рождения", merged[0].Name);
-        Assert.Equal(6, merged.Count);
+        Assert.Equal(["День Рождения", "Религиозный", "Праздник", "Поминки", "Свой тип"], merged.Select(d => d.Name));
         Assert.Equal(new EventDefinition("Свой тип"), merged[^1]);
     }
 
