@@ -92,7 +92,8 @@ internal sealed class TrayApp : IDisposable
         return new System.Drawing.Icon(stream, Forms.SystemInformation.SmallIconSize);
     }
 
-    public void Start()
+    /// <param name="openList">Started by the installer (install or update): show the list; autostart stays in the tray.</param>
+    public void Start(bool openList)
     {
         ApplyTheme();
         _icon.Visible = true;
@@ -105,6 +106,8 @@ internal sealed class TrayApp : IDisposable
             _updateTimer.Interval = TimeSpan.FromMinutes(1);
             _updateTimer.Start();
         }
+        if (openList)
+            OpenList();
     }
 
     public void Dispose()
@@ -274,7 +277,7 @@ internal sealed class TrayApp : IDisposable
         if (_list is not null)
         {
             if (_list.WindowState == WindowState.Minimized)
-                _list.WindowState = WindowState.Normal;
+                _list.WindowState = WindowState.Maximized;
             _list.Activate();
             return;
         }
