@@ -19,7 +19,8 @@ public sealed class DefaultEntriesTests
             ["День отца"] = new(2027, 10, 17),
             ["День матери"] = new(2027, 11, 28),
         }, dates2027);
-        Assert.All(entries, e => Assert.Equal("Праздник", e.EventType));
+        string[] religious = ["Рождество Христово", "Пасха"];
+        Assert.All(entries, e => Assert.Equal(religious.Contains(e.Name) ? "Религиозный" : "Праздник", e.EventType));
         Assert.Equal(entries.Count, entries.Select(e => e.Id).Distinct().Count());
     }
 }
