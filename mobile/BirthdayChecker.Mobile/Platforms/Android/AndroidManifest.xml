@@ -6,4 +6,8 @@
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<!-- Only for the update check (BDC-61): one request to GitHub's release list; the records never leave the phone this way. -->
 	<uses-permission android:name="android.permission.INTERNET" />
+	<!-- BDC-67: the app installs its own update; Android 12+ without a dialog. Network state: silent only on Wi-Fi. -->
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+	<uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>

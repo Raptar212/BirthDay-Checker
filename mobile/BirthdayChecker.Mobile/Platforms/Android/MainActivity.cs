@@ -14,6 +14,45 @@ public class MainActivity : MauiAppCompatActivity
 
 	private GestureDetector? _swipes;
 
+	/// <summary>Between OnResume and OnPause: the installer's dialog may be shown now.</summary>
+	internal static bool OnScreen { get; private set; }
+
+	protected override void OnResume()
+	{
+		base.OnResume();
+		OnScreen = true;
+		ShowConfirm(this);
+	}
+
+	protected override void OnPause()
+	{
+		OnScreen = false;
+		base.OnPause();
+	}
+
+	/// <summary>The user left for another app or home: a silent update installs now, unseen.</summary>
+	protected override void OnUserLeaveHint()
+	{
+		base.OnUserLeaveHint();
+		SelfUpdate.CommitIfIdle();
+	}
+
+	/// <summary>Closed with Back: install too.</summary>
+	protected override void OnDestroy()
+	{
+		if (IsFinishing)
+			SelfUpdate.CommitIfIdle();
+		base.OnDestroy();
+	}
+
+	internal static void ShowConfirm(Android.Content.Context context)
+	{
+		if (SelfUpdate.Confirm is not { } confirm)
+			return;
+		SelfUpdate.Confirm = null;
+		context.StartActivity(confirm);
+	}
+
 	public override bool DispatchTouchEvent(MotionEvent? e)
 	{
 		if (e is not null)

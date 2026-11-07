@@ -4,7 +4,7 @@
 в трее и заранее напоминает о ближайших событиях.
 
 > **Версия 2.4.3** (ПК) — [Releases](https://github.com/Raptar212/BirthDay-Checker/releases/latest) ·
-> **0.66.0** (телефон, Android) — [mobile-v0.66.0](https://github.com/Raptar212/BirthDay-Checker/releases/tag/mobile-v0.66.0)
+> **0.67.0** (телефон, Android) — [mobile-v0.67.0](https://github.com/Raptar212/BirthDay-Checker/releases/tag/mobile-v0.67.0)
 
 ## Установка
 
@@ -22,7 +22,9 @@ Windows 10 или 11, 64-бит: запустите `BirthdayChecker-Setup-<ве
 
 Приложение для Android в разработке: список, календарь, редактор записей, ежедневное уведомление
 и виджет «Проверить»; новую версию находит само (при открытии раз в день или ⋮ → «Проверить
-обновления») и открывает её APK в браузере. APK — в [Releases](https://github.com/Raptar212/BirthDay-Checker/releases)
+обновления»), сверяет SHA-256 и ставит сама: на Android 12+ по Wi-Fi без вопросов, когда вы
+выходите из приложения, на Android 8–11 — через системное окно «Установить». Нужно один раз разрешить
+приложению «Установку неизвестных приложений». APK — в [Releases](https://github.com/Raptar212/BirthDay-Checker/releases)
 (теги `mobile-v*`). Обмен записями с ПК: на телефоне ⋮ → «Поделиться» отправляет `entries.json`,
 на ПК его принимает «Ещё ▾» → «Импорт»; в обратную сторону — ⋮ → «Добавить из файла».
 

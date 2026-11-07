@@ -329,11 +329,16 @@ public partial class MainPage : ContentPage
 		}
 		try
 		{
+			SelfUpdate.OwnActivity = true; // the share sheet is not "leaving": no silent update under it
 			await Share.Default.RequestAsync(new ShareFileRequest("entries.json", new ShareFile(EntriesPath, "application/json")));
 		}
 		catch (Exception ex) // async void: an unhandled exception would close the app
 		{
 			await DisplayAlertAsync("Не отправлено", ex.Message, "OK");
+		}
+		finally
+		{
+			SelfUpdate.OwnActivity = false;
 		}
 	}
 
@@ -343,12 +348,17 @@ public partial class MainPage : ContentPage
 		FileResult? file;
 		try
 		{
+			SelfUpdate.OwnActivity = true; // nor is the file picker
 			file = await FilePicker.Default.PickAsync();
 		}
 		catch (Exception ex)
 		{
 			await DisplayAlertAsync("Файл не выбран", ex.Message, "OK");
 			return null;
+		}
+		finally
+		{
+			SelfUpdate.OwnActivity = false;
 		}
 		if (file is null)
 			return null;
