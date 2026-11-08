@@ -34,6 +34,10 @@ internal sealed class TrayApp : IDisposable
     private readonly DispatcherTimer _midnight = new();
     private readonly DispatcherTimer _snoozeEnd = new();
     private readonly DispatcherTimer _updateTimer = new();
+    private readonly DispatcherTimer _blink = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private readonly System.Drawing.Icon _iconBright = LoadIcon();
+    private readonly System.Drawing.Icon _iconDim;
+    private bool _disposed;           // exit during a check or download: its finally must not touch the disposed icon
     private MediaPlayer? _player;   // created on first custom sound: the WPF media stack isn't free
     private AppSettings _settings = AppSettings.Load(SettingsPath);
     private TrayState _state = TrayState.Load(StatePath);
@@ -57,10 +61,12 @@ internal sealed class TrayApp : IDisposable
         _menu = BuildMenu();
         _icon = new Forms.NotifyIcon
         {
-            Icon = LoadIcon(),
+            Icon = _iconBright,
             Text = Title,
             ContextMenuStrip = _menu,
         };
+        _iconDim = Dimmed(_iconBright);
+        _blink.Tick += (_, _) => _icon.Icon = _icon.Icon == _iconBright ? _iconDim : _iconBright;
         _icon.DoubleClick += (_, _) => OpenList();
         _icon.BalloonTipClicked += (_, _) =>
         {
@@ -92,6 +98,49 @@ internal sealed class TrayApp : IDisposable
         return new System.Drawing.Icon(stream, Forms.SystemInformation.SmallIconSize);
     }
 
+    /// <summary>The same icon, faded: blinking between the two keeps the icon in its place in the tray, which hiding it would not.</summary>
+    private static System.Drawing.Icon Dimmed(System.Drawing.Icon icon)
+    {
+        using var bright = icon.ToBitmap();
+        using var dim = new System.Drawing.Bitmap(bright.Width, bright.Height);
+        using (var g = System.Drawing.Graphics.FromImage(dim))
+        using (var fade = new System.Drawing.Imaging.ImageAttributes())
+        {
+            fade.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix { Matrix33 = 0.3f });
+            g.DrawImage(bright, new System.Drawing.Rectangle(0, 0, dim.Width, dim.Height), 0, 0, dim.Width, dim.Height,
+                System.Drawing.GraphicsUnit.Pixel, fade);
+        }
+        IntPtr handle = dim.GetHicon();
+        try
+        {
+            using var borrowed = System.Drawing.Icon.FromHandle(handle);
+            return (System.Drawing.Icon)borrowed.Clone(); // owns its own copy, so the handle can go now
+        }
+        finally
+        {
+            DestroyIcon(handle);
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool DestroyIcon(IntPtr handle);
+
+    /// <summary>Blinks while an update is checked or downloaded; null stops.</summary>
+    private void Blink(string? what)
+    {
+        if (_disposed)
+            return;
+        if (what is null)
+        {
+            _blink.Stop();
+            _icon.Icon = _iconBright;
+            _icon.Text = Title;
+            return;
+        }
+        _icon.Text = $"{Title}: {what}";
+        _blink.Start();
+    }
+
     /// <param name="openList">Started by the installer (install or update): show the list; autostart stays in the tray.</param>
     public void Start(bool openList)
     {
@@ -112,15 +161,18 @@ internal sealed class TrayApp : IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged; // static events: would leak the handlers
         SystemEvents.TimeChanged -= OnTimeChanged;
         _timer.Stop();
         _midnight.Stop();
         _snoozeEnd.Stop();
         _updateTimer.Stop();
+        _blink.Stop();
         _player?.Close();
         _icon.Visible = false;
-        _icon.Icon?.Dispose();
+        _iconBright.Dispose();
+        _iconDim.Dispose();
         _icon.Dispose();
         _menu.Dispose();
     }
@@ -559,10 +611,13 @@ internal sealed class TrayApp : IDisposable
             return;
         }
         _updating = true;
+        Blink("проверка обновлений…");
         UpdateRelease? release;
         try
         {
-            release = await Updater.FindNewer();
+            var find = Updater.FindNewer();
+            await Task.Delay(1500); // GitHub answers in a blink; the icon must be seen blinking
+            release = await find;
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidDataException)
         {
@@ -572,6 +627,7 @@ internal sealed class TrayApp : IDisposable
         }
         finally
         {
+            Blink(null);
             _updating = false;
         }
         if (release is null)
@@ -643,6 +699,7 @@ internal sealed class TrayApp : IDisposable
             if (_downloaded is not { } d || d.Release != release)
             {
                 Balloon(5000, $"Скачивается версия {release.Version.ToString(3)}…", Forms.ToolTipIcon.Info);
+                Blink("скачивается обновление…");
                 _downloaded = (release, await Updater.Download(release));
             }
             if (_busy || DialogOpen())
@@ -660,6 +717,7 @@ internal sealed class TrayApp : IDisposable
         }
         finally
         {
+            Blink(null);
             _updating = false;
         }
         Application.Current.Shutdown();

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -90,10 +91,16 @@ public sealed class CalendarView : DockPanel
     private static readonly Color Summer = Color.FromRgb(0x43, 0xA0, 0x47);
     private static readonly Color Autumn = Color.FromRgb(0xF2, 0x8C, 0x28);
 
-    private readonly TextBlock _title = new()
+    private readonly Button _title = new()
     {
-        FontSize = 16, FontWeight = FontWeights.SemiBold, Width = 60, TextAlignment = TextAlignment.Center,
-        VerticalAlignment = VerticalAlignment.Center,
+        FontSize = 16, FontWeight = FontWeights.SemiBold, MinWidth = 60, Margin = new Thickness(0, 0, 6, 0),
+        VerticalAlignment = VerticalAlignment.Center, ToolTip = "Выбрать год",
+    };
+    private readonly Popup _years = new() { StaysOpen = false, Placement = PlacementMode.Bottom, AllowsTransparency = true };
+    private readonly TextBlock _hint = new()
+    {
+        Text = "В значке — первая буква имени. Свой цвет записи заменяет цвет события.",
+        FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0),
     };
     private readonly WrapPanel _months = new() { HorizontalAlignment = HorizontalAlignment.Center };
     private readonly WrapPanel _legend = new() { Margin = new Thickness(0, 8, 0, 0), ItemWidth = Slot, HorizontalAlignment = HorizontalAlignment.Center };
@@ -102,6 +109,7 @@ public sealed class CalendarView : DockPanel
     private readonly System.Windows.Media.Effects.BlurEffect _blur = new() { Radius = 8 };
     private CalendarLook _look = new([], EventCatalog.DefaultTodayColor, EventCatalog.DefaultSeveralColor);
     private int? _focus;
+    private long _yearsClosed;
 
     public int Year { get; private set; } = DateTime.Today.Year;
 
@@ -121,12 +129,26 @@ public sealed class CalendarView : DockPanel
     /// <summary>"Добавить событие" in a month's menu.</summary>
     public event Action<int>? AddRequested;
 
+    /// <summary>A day of the month in focus was clicked; only with <see cref="Picking"/>.</summary>
+    public event Action<DateOnly>? DayClicked;
+
+    /// <summary>Choosing a date: no legend, no menu, the days of the month in focus take clicks.</summary>
+    public bool Picking { get; init; }
+
     /// <summary>The year switcher; the window places it on its toolbar row.</summary>
     public StackPanel Nav { get; } = new() { Orientation = Orientation.Horizontal };
 
     public CalendarView()
     {
         Nav.Children.Add(NavButton("◀", () => Go(Year - 1)));
+        _title.Click += (_, _) =>
+        {
+            // The click that closed the popup (StaysOpen = false) lands here next: it closes, not reopens.
+            if (Environment.TickCount64 - _yearsClosed > 300)
+                PickYear();
+        };
+        _years.Closed += (_, _) => _yearsClosed = Environment.TickCount64;
+        _years.PlacementTarget = _title;
         Nav.Children.Add(_title);
         Nav.Children.Add(NavButton("▶", () => Go(Year + 1)));
         Nav.Children.Add(NavButton("Текущий год", () =>
@@ -137,11 +159,7 @@ public sealed class CalendarView : DockPanel
         var content = new StackPanel();
         content.Children.Add(_months);
         content.Children.Add(_legend); // scrolls with the months: pinned, it would squeeze them out of a low window
-        content.Children.Add(new TextBlock
-        {
-            Text = "В значке — первая буква имени. Свой цвет записи заменяет цвет события.",
-            FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0),
-        }.Hinted());
+        content.Children.Add(_hint.Hinted());
         _year.Content = content;
         // A click on the dimmed year beside the month in focus leaves the focus, as a second click on the month does.
         _overlay.MouseLeftButtonUp += (_, e) =>
@@ -187,6 +205,72 @@ public sealed class CalendarView : DockPanel
         YearChanged?.Invoke();
     }
 
+    /// <summary>December goes on to January of the next year; null past the calendar's years.</summary>
+    public static (int Year, int Month)? Step(int year, int month, int step)
+    {
+        int index = year * 12 + month - 1 + step;
+        return index / 12 is < MinYear or > MaxYear ? null : (index / 12, index % 12 + 1);
+    }
+
+    /// <summary>Width of a year with this many months in a row.</summary>
+    public static double WidthFor(int columns) => columns * Slot + SystemParameters.VerticalScrollBarWidth;
+
+    /// <summary>25 years around the shown one, as Windows' own calendar does; the arrows turn 25 at a time.</summary>
+    private void PickYear() => ShowYears(Year - 12);
+
+    private void ShowYears(int first)
+    {
+        first = Math.Clamp(first, MinYear, MaxYear - 24);
+        var grid = new UniformGrid { Columns = 5 };
+        for (int year = first; year < first + 25; year++)
+        {
+            int chosen = year;
+            var button = new Button
+            {
+                Content = year.ToString(CultureInfo.InvariantCulture), Width = 64, Margin = new Thickness(2),
+                FontWeight = year == DateTime.Today.Year ? FontWeights.Bold : FontWeights.Normal,
+            };
+            if (year == Year) // the shown year in the accent color, as Windows' own calendar marks it
+            {
+                button.SetResourceReference(Control.BackgroundProperty, "AccentFillColorDefaultBrush");
+                button.SetResourceReference(Control.ForegroundProperty, "TextOnAccentFillColorPrimaryBrush");
+            }
+            button.Click += (_, _) =>
+            {
+                _years.IsOpen = false;
+                Go(chosen);
+            };
+            grid.Children.Add(button);
+        }
+        var arrows = new DockPanel { Margin = new Thickness(2, 0, 2, 4) };
+        var back = NavButton("◀", () => ShowYears(first - 25));
+        var on = NavButton("▶", () => ShowYears(first + 25));
+        back.IsEnabled = first > MinYear;
+        on.IsEnabled = first + 25 <= MaxYear;
+        on.Margin = new Thickness(0);
+        DockPanel.SetDock(back, Dock.Left);
+        DockPanel.SetDock(on, Dock.Right);
+        arrows.Children.Add(back);
+        arrows.Children.Add(on);
+        arrows.Children.Add(new TextBlock
+        {
+            Text = $"{first} – {first + 24}", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+        });
+        var panel = new DockPanel();
+        DockPanel.SetDock(arrows, Dock.Top);
+        panel.Children.Add(arrows);
+        panel.Children.Add(grid);
+        var window = Window.GetWindow(this);
+        _years.Child = new Border
+        {
+            Child = panel, Padding = new Thickness(6), CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray, Background = window?.Background, // a popup has no window to inherit the theme from
+        };
+        if (window is not null)
+            TextElement.SetForeground(_years.Child, window.Foreground);
+        _years.IsOpen = true;
+    }
+
     /// <param name="items">Occurrences of the whole year.</param>
     /// <param name="today">Today's date.</param>
     /// <param name="focus">The month to show alone; null = the whole year.</param>
@@ -194,7 +278,7 @@ public sealed class CalendarView : DockPanel
     public void Show(IReadOnlyList<Occurrence> items, DateOnly today, int? focus, CalendarLook look)
     {
         _look = look;
-        _title.Text = Year.ToString(CultureInfo.InvariantCulture);
+        _title.Content = Year.ToString(CultureInfo.InvariantCulture);
         var byDate = items.ToLookup(o => o.Date);
         _months.Children.Clear();
         for (int month = 1; month <= 12; month++)
@@ -206,6 +290,7 @@ public sealed class CalendarView : DockPanel
         _overlay.Visibility = focus is null ? Visibility.Collapsed : Visibility.Visible;
         _year.Effect = focus is null ? null : _blur;
         _year.IsHitTestVisible = focus is null;
+        _legend.Visibility = _hint.Visibility = Picking ? Visibility.Collapsed : Visibility.Visible;
         FillLegend();
         ResizeMonths();
     }
@@ -276,9 +361,12 @@ public sealed class CalendarView : DockPanel
                 RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(Window), 1),
             });
         frame.MouseLeftButtonUp += (_, _) => MonthClicked?.Invoke(month);
-        var add = new MenuItem { Header = "Добавить событие" };
-        add.Click += (_, _) => AddRequested?.Invoke(month);
-        frame.ContextMenu = new ContextMenu { Items = { add } };
+        if (!Picking)
+        {
+            var add = new MenuItem { Header = "Добавить событие" };
+            add.Click += (_, _) => AddRequested?.Invoke(month);
+            frame.ContextMenu = new ContextMenu { Items = { add } };
+        }
         panel.Children.Add(new TextBlock
         {
             Text = Ru.TextInfo.ToTitleCase(Ru.DateTimeFormat.MonthNames[month - 1]),
@@ -302,10 +390,25 @@ public sealed class CalendarView : DockPanel
         for (int day = 1; day <= DateTime.DaysInMonth(Year, month); day++)
         {
             var date = new DateOnly(Year, month, day);
-            days.Children.Add(Day(day, byDate[date].ToList(), date == today));
+            var cell = Day(day, byDate[date].ToList(), date == today);
+            days.Children.Add(focused && Picking ? Pickable(cell, date) : cell);
         }
         panel.Children.Add(days);
         return frame;
+    }
+
+    /// <summary>The whole cell takes the click, which goes no further: the month under it would leave the focus.</summary>
+    private Border Pickable(FrameworkElement cell, DateOnly date)
+    {
+        var border = new Border { Child = cell, Background = Brushes.Transparent, CornerRadius = new CornerRadius(4) };
+        border.MouseEnter += (_, _) => border.Background = new SolidColorBrush(Color.FromArgb(0x40, 0x80, 0x80, 0x80));
+        border.MouseLeave += (_, _) => border.Background = Brushes.Transparent;
+        border.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            DayClicked?.Invoke(date);
+        };
+        return border;
     }
 
     private static Color SeasonColor(int month) => month switch

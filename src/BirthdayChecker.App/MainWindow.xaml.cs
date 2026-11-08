@@ -88,17 +88,12 @@ public partial class MainWindow : Window
 
     private IReadOnlyList<string> EventNames => EventList.Select(t => t.Name).ToList();
 
-    /// <summary>December goes on to January of the next year.</summary>
     private void StepMonth(int step)
     {
-        if (_month is not { } month)
+        if (_month is not { } month || CalendarView.Step(Calendar.Year, month, step) is not { } next)
             return;
-        int index = Calendar.Year * 12 + month - 1 + step;
-        int year = index / 12;
-        if (year is < CalendarView.MinYear or > CalendarView.MaxYear)
-            return;
-        _month = index % 12 + 1;
-        Calendar.Go(year); // redraws the list too
+        _month = next.Month;
+        Calendar.Go(next.Year); // redraws the list too
     }
 
     private void OnCalendarResize(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)

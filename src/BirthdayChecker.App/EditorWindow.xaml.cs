@@ -115,6 +115,19 @@ public partial class EditorWindow : Window
         SetColor(e?.Color);
     }
 
+    /// <summary>The calendar starts at the year in the box; "Без года" is on if an existing entry has none.</summary>
+    private void OnPickDate(object sender, RoutedEventArgs e)
+    {
+        string text = YearBox.Text.Trim();
+        int year = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int y) && y is >= CalendarView.MinYear and <= CalendarView.MaxYear
+            ? y : DateTime.Today.Year;
+        if (DatePickWindow.Pick(this, year, noYear: text.Length == 0 && _original is not null) is not { } picked)
+            return;
+        DayBox.SelectedItem = picked.Date.Day;
+        MonthBox.SelectedIndex = picked.Date.Month - 1;
+        YearBox.Text = picked.NoYear ? "" : picked.Date.Year.ToString(CultureInfo.InvariantCulture);
+    }
+
     private void OnKindChanged(object sender, RoutedEventArgs e)
     {
         FixedPanel.Visibility = FixedRadio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
