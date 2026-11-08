@@ -15,12 +15,12 @@ internal static class DatePickWindow
     /// <param name="noYear">"Без года" is on at the start: the day and month are filled, the year is left empty.</param>
     public static (DateOnly Date, bool NoYear)? Pick(Window owner, int year, bool noYear)
     {
-        var calendar = new CalendarView { Picking = true, Width = CalendarView.WidthFor(3) };
+        var calendar = new CalendarView { Picking = true, Width = CalendarView.WidthFor(4) }; // 3 rows: the whole year fits without scrolling
         calendar.Go(year);
         var window = new Window
         {
             Title = "Выбор даты", Owner = owner, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
-            SizeToContent = SizeToContent.Width, Height = Math.Min(900, SystemParameters.WorkArea.Height - 40),
+            SizeToContent = SizeToContent.WidthAndHeight, MaxHeight = SystemParameters.WorkArea.Height,
         };
         // One text line inside the box: a separate block beside it sits lower than the box's own text.
         var label = new TextBlock { Text = "Без года " };
