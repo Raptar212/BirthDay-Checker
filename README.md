@@ -3,7 +3,7 @@
 Напоминалка о днях рождения, именинах, годовщинах и праздниках для Windows и Android. На ПК живёт
 в трее и заранее напоминает о ближайших событиях.
 
-> **Версия 2.4.3** (ПК) — [Releases](https://github.com/Raptar212/BirthDay-Checker/releases/latest) ·
+> **Версия 2.5.0** (ПК) — [Releases](https://github.com/Raptar212/BirthDay-Checker/releases/latest) ·
 > **0.67.0** (телефон, Android) — [mobile-v0.67.0](https://github.com/Raptar212/BirthDay-Checker/releases/tag/mobile-v0.67.0)
 
 ## Установка

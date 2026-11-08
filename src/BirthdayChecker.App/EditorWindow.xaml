@@ -33,6 +33,7 @@
                     <RadioButton x:Name="EasterRadio" Content="От Пасхи" GroupName="Kind" Checked="OnKindChanged"/>
                 </WrapPanel>
                 <WrapPanel x:Name="FixedPanel" Margin="0,0,0,8">
+                    <Button Content="Календарь" Click="OnPickDate" Margin="0,0,6,0" ToolTip="Выбрать дату в календаре"/>
                     <ComboBox x:Name="DayBox" Width="80"/>
                     <ComboBox x:Name="MonthBox" Width="130" Margin="6,0"/>
                     <TextBox x:Name="YearBox" Width="90" VerticalContentAlignment="Center"/>
