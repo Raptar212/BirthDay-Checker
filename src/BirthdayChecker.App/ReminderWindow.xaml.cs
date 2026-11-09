@@ -50,11 +50,19 @@ public partial class ReminderWindow : Window
             }
 
             var lines = ReminderText.Lines(items[i], _settings.ReminderColumns);
+            bool today = items[i].DaysLeft == 0;
             var text = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 14 };
-            text.Inlines.Add(new System.Windows.Documents.Bold(new System.Windows.Documents.Run(lines[0])));
+            text.Inlines.Add(new System.Windows.Documents.Bold(new System.Windows.Documents.Run(today ? lines[0] + " 🎉" : lines[0])));
             text.Inlines.Add(new System.Windows.Documents.LineBreak());
             text.Inlines.Add(new System.Windows.Documents.Run(string.Join(Environment.NewLine, lines.Skip(1))));
-            Items.Children.Add(text);
+            if (today)
+            {
+                // Plate color from settings; black text so it reads on any window theme.
+                text.Foreground = Brushes.Black;
+                Items.Children.Add(new Border { Background = Brush(_settings.ReminderTodayColor), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 4, 6, 4), Child = text });
+            }
+            else
+                Items.Children.Add(text);
         }
         RestartAutoClose();
     }

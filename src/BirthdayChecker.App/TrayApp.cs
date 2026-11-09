@@ -75,7 +75,7 @@ internal sealed class TrayApp : IDisposable
         };
         _updateTimer.Tick += (_, _) =>
         {
-            ScheduleUpdateCheck();
+            _updateTimer.Stop(); // once per start
             CheckForUpdates(manual: false);
         };
         ColorPick.LoadCustom = () => _settings.CustomColors ?? [];
@@ -222,7 +222,6 @@ internal sealed class TrayApp : IDisposable
     {
         int oldInterval = _settings.CheckIntervalMinutes;
         bool oldTheme = _settings.DarkTheme;
-        var oldUpdates = (_settings.CheckUpdates, _settings.UpdateHour);
         _settings = change(_settings);
         try
         {
@@ -236,8 +235,8 @@ internal sealed class TrayApp : IDisposable
             ApplyInterval();
         if (_settings.DarkTheme != oldTheme)
             ApplyTheme();
-        if ((_settings.CheckUpdates, _settings.UpdateHour) != oldUpdates)
-            ScheduleUpdateCheck();
+        if (!_settings.CheckUpdates)
+            _updateTimer.Stop(); // turned off within the first minute: skip the pending start check
     }
 
     /// <summary>Both are WPF's built-in Fluent theme, so only colors change, never sizes. Open windows follow.</summary>
@@ -586,17 +585,6 @@ internal sealed class TrayApp : IDisposable
     }
 
     // ---- updates --------------------------------------------------------------------------
-
-    private void ScheduleUpdateCheck()
-    {
-        _updateTimer.Stop();
-        if (!_settings.CheckUpdates)
-            return;
-        var now = DateTime.Now;
-        // A minute ahead: a tick that comes a hair early must not find "today at the hour" still ahead and fire twice.
-        _updateTimer.Interval = UpdateCheck.NextDaily(now.AddMinutes(1), _settings.UpdateHour) - now;
-        _updateTimer.Start();
-    }
 
     /// <summary>
     /// Automatic: only a balloon, and only when there is a new version; a click on it asks.

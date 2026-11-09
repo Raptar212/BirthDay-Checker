@@ -176,9 +176,10 @@ public sealed class AppSettingsTests : IDisposable
     public void BadField_FallsBackAlone_OthersKept()
     {
         File.WriteAllText(FilePath, """
-            { "checkIntervalMinutes": 60, "autoCloseSeconds": 3601, "position": 42, "textColor": "red", "backgroundColor": "#00FF00" }
+            { "checkIntervalMinutes": 60, "autoCloseSeconds": 3601, "position": 42, "textColor": "red", "backgroundColor": "#00FF00", "reminderTodayColor": "pink" }
             """);
         var s = AppSettings.Load(FilePath);
+        Assert.Equal(AppSettings.DefaultReminderTodayColor, s.ReminderTodayColor);
         Assert.Equal((60, 0, PopupPosition.BottomRight, null, "#00FF00"),
             (s.CheckIntervalMinutes, s.AutoCloseSeconds, s.Position, s.TextColor, s.BackgroundColor));
     }
