@@ -175,15 +175,6 @@ public sealed class UpdateCheckTests
     public void IsNewer_ComparesThreeNumbers(string latest, string current, bool newer) =>
         Assert.Equal(newer, UpdateCheck.IsNewer(Version.Parse(latest), Version.Parse(current)));
 
-    [Theory]
-    [InlineData("2026-11-05 09:30", 12, "2026-11-05 12:00")]
-    [InlineData("2026-11-05 12:00", 12, "2026-11-06 12:00")]
-    [InlineData("2026-11-05 15:00", 12, "2026-11-06 12:00")]
-    [InlineData("2026-12-31 23:30", 0, "2027-01-01 00:00")]
-    [InlineData("2026-11-05 00:00", 0, "2026-11-06 00:00")]
-    public void NextDaily_TodayIfAheadElseTomorrow(string now, int hour, string next) =>
-        Assert.Equal(DateTime.Parse(next), UpdateCheck.NextDaily(DateTime.Parse(now), hour));
-
     [Fact]
     public void HashMatches_ChecksSha256()
     {
@@ -195,7 +186,7 @@ public sealed class UpdateCheckTests
     }
 
     [Fact]
-    public void Settings_UpdateDefaultsAndBadHour()
+    public void Settings_UpdateDefault_OldHourIgnored()
     {
         var path = Path.Combine(Path.GetTempPath(), $"bdc-settings-{Guid.NewGuid():N}.json");
         try
@@ -203,12 +194,10 @@ public sealed class UpdateCheckTests
             File.WriteAllText(path, "{}");
             var defaults = AppSettings.Load(path);
             Assert.True(defaults.CheckUpdates);
-            Assert.Equal(12, defaults.UpdateHour);
 
             File.WriteAllText(path, "{\"checkUpdates\":false,\"updateHour\":24}");
-            var bad = AppSettings.Load(path);
-            Assert.False(bad.CheckUpdates);
-            Assert.Equal(12, bad.UpdateHour);
+            var old = AppSettings.Load(path); // a file from a version with the daily hour
+            Assert.False(old.CheckUpdates);
         }
         finally
         {

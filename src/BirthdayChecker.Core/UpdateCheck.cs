@@ -101,13 +101,6 @@ public static class UpdateCheck
     /// <summary>Compares major.minor.patch only: the assembly's 2.2.0.0 equals the tag's 2.2.0.</summary>
     public static bool IsNewer(Version latest, Version current) => Normalize(latest) > Normalize(current);
 
-    /// <summary>The next daily check at <paramref name="hour"/>:00, today if it is still ahead.</summary>
-    public static DateTime NextDaily(DateTime now, int hour)
-    {
-        var today = now.Date.AddHours(hour);
-        return today > now ? today : today.AddDays(1);
-    }
-
     /// <summary>True when the file's SHA-256 is <paramref name="sha256"/> (hex, any case).</summary>
     public static bool HashMatches(Stream file, string sha256) =>
         Convert.ToHexStringLower(SHA256.HashData(file)) == sha256.ToLowerInvariant();

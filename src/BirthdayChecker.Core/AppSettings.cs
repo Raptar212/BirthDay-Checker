@@ -33,11 +33,8 @@ public sealed partial record AppSettings
 
     public int CheckIntervalMinutes { get; init; } = DefaultInterval;
 
-    /// <summary>Look for a new version at start and once a day; off leaves only the tray menu's check.</summary>
+    /// <summary>Look for a new version a minute after start; off leaves only the tray menu's check.</summary>
     public bool CheckUpdates { get; init; } = true;
-
-    /// <summary>Hour (0–23) of the daily update check.</summary>
-    public int UpdateHour { get; init; } = 12;
     public NotificationMode Notification { get; init; } = NotificationMode.Window;
 
     /// <summary>Ticked columns of a reminder, name and date are always there; null = <see cref="ColumnCatalog.ReminderDefault"/>.</summary>
@@ -54,6 +51,11 @@ public sealed partial record AppSettings
 
     /// <summary>"#RRGGBB"; null = system default.</summary>
     public string? BackgroundColor { get; init; }
+
+    public const string DefaultReminderTodayColor = "#FFD9D9";
+
+    /// <summary>"#RRGGBB" plate behind today's events in the reminder popup.</summary>
+    public string ReminderTodayColor { get; init; } = DefaultReminderTodayColor;
 
     public string? BackgroundImage { get; init; }
 
@@ -119,7 +121,6 @@ public sealed partial record AppSettings
         return this with
         {
             CheckIntervalMinutes = IntervalChoices.Contains(CheckIntervalMinutes) ? CheckIntervalMinutes : d.CheckIntervalMinutes,
-            UpdateHour = UpdateHour is >= 0 and <= 23 ? UpdateHour : d.UpdateHour,
             AutoCloseSeconds = AutoCloseSeconds is >= 0 and <= MaxAutoCloseSeconds ? AutoCloseSeconds : d.AutoCloseSeconds,
             BackupPeriodDays = BackupPeriodDays is >= 0 and <= MaxBackupPeriodDays ? BackupPeriodDays : d.BackupPeriodDays,
             Notification = Enum.IsDefined(Notification) ? Notification : d.Notification,
@@ -128,6 +129,7 @@ public sealed partial record AppSettings
             Sound = Enum.IsDefined(Sound) ? Sound : d.Sound,
             TextColor = IsColor(TextColor) ? TextColor : null,
             BackgroundColor = IsColor(BackgroundColor) ? BackgroundColor : null,
+            ReminderTodayColor = IsColor(ReminderTodayColor) ? ReminderTodayColor : DefaultReminderTodayColor,
             SoundFile = IsFullPath(SoundFile) ? SoundFile : null,
             BackgroundImage = IsFullPath(BackgroundImage) ? BackgroundImage : null,
             Columns = Columns?.Where(c => c is { Key.Length: > 0, Index: >= 0, Width: > 10 and < 3000 }).ToList(),

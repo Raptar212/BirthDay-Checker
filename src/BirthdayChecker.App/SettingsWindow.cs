@@ -21,8 +21,7 @@ internal sealed class SettingsWindow : Window
     private readonly ComboBox _interval = new() { Width = 140, HorizontalAlignment = HorizontalAlignment.Left };
     private readonly CheckBox _autostart = new() { Content = "Запускать вместе с Windows" };
     private readonly CheckBox _darkTheme = new() { Content = "Тёмная тема" };
-    private readonly CheckBox _checkUpdates = new() { Content = "Проверять при запуске и каждый день в", MinWidth = 0, Margin = new Thickness(0, 0, 8, 0) };
-    private readonly ComboBox _updateHour = new() { Width = 100 };
+    private readonly CheckBox _checkUpdates = new() { Content = "Проверять при запуске", MinWidth = 0 };
     private readonly TextBlock _autostartHint = new TextBlock { TextWrapping = TextWrapping.Wrap }.Hinted();
     private readonly ComboBox _position = new() { Width = 140, HorizontalAlignment = HorizontalAlignment.Left };
     // 90: with focus the dark theme's field keeps 56 for its padding and clear button.
@@ -33,6 +32,7 @@ internal sealed class SettingsWindow : Window
     private readonly RadioButton _soundFile = new() { Content = "Свой файл", GroupName = "Sound", MinWidth = 0 };
     private readonly TextBlock _soundPath = PathLabel();
     private readonly Border _textSwatch = Swatch();
+    private readonly Border _todaySwatch = Swatch();
     private readonly Border _backSwatch = Swatch();
     private readonly TextBlock _imagePath = PathLabel();
     private readonly RadioButton _viewWindow = new() { Content = "Окно программы", GroupName = "View", MinWidth = 0, Margin = new Thickness(0, 0, 12, 0) };
@@ -58,12 +58,7 @@ internal sealed class SettingsWindow : Window
         _interval.SelectedIndex = Array.IndexOf(AppSettings.IntervalChoices, _s.CheckIntervalMinutes);
         _autostart.IsChecked = Autostart.IsEnabled;
         _darkTheme.IsChecked = _s.DarkTheme;
-        _updateHour.ItemsSource = Enumerable.Range(0, 24).Select(h => $"{h:00}:00").ToList();
-        _updateHour.SelectedIndex = _s.UpdateHour;
-        _checkUpdates.Checked += (_, _) => _updateHour.IsEnabled = true;
-        _checkUpdates.Unchecked += (_, _) => _updateHour.IsEnabled = false;
         _checkUpdates.IsChecked = _s.CheckUpdates;
-        _updateHour.IsEnabled = _s.CheckUpdates;
         if (!Autostart.CanEnable)
         {
             _autostart.IsEnabled = false;
@@ -90,7 +85,7 @@ internal sealed class SettingsWindow : Window
             Row("", _autostart),
             Row("", _autostartHint, visible: _autostartHint.Text.Length > 0),
             Row("", _darkTheme),
-            Row("Обновления:", Line(_checkUpdates, _updateHour))));
+            Row("Обновления:", _checkUpdates)));
         // Only the program's own window has these; a Windows notification looks and sounds as Windows sets it.
         var windowRows = new StackPanel();
         foreach (var row in new[]
@@ -104,6 +99,9 @@ internal sealed class SettingsWindow : Window
             Row("", Line(Btn("Выбрать файл…", PickSound), _soundPath)),
             Row("Цвет текста:", Line(_textSwatch, Btn("Выбрать…", () => PickColor(text: true)), Btn("Как в системе", () => SetLook(_s with { TextColor = null })))),
             Row("Цвет фона:", Line(_backSwatch, Btn("Выбрать…", () => PickColor(text: false)), Btn("Как в системе", () => SetLook(_s with { BackgroundColor = null })))),
+            Row("Фон «сегодня»:", Line(_todaySwatch,
+                Btn("Выбрать…", () => { if (ColorPick.Pick(_s.ReminderTodayColor) is { } c) SetLook(_s with { ReminderTodayColor = c }); }),
+                Btn("По умолчанию", () => SetLook(_s with { ReminderTodayColor = AppSettings.DefaultReminderTodayColor })))),
             Row("Картинка фона:", Line(Btn("Выбрать…", PickImage), Btn("Убрать", () => SetLook(_s with { BackgroundImage = null })), _imagePath)),
         })
             windowRows.Children.Add(row);
@@ -222,6 +220,7 @@ internal sealed class SettingsWindow : Window
     {
         ShowColor(_textSwatch, _s.TextColor);
         ShowColor(_backSwatch, _s.BackgroundColor);
+        ShowColor(_todaySwatch, _s.ReminderTodayColor);
         _soundPath.Text = _s.SoundFile is { } f ? Path.GetFileName(f) : "файл не выбран";
         _soundPath.ToolTip = _s.SoundFile;
         _imagePath.Text = _s.BackgroundImage is { } i ? Path.GetFileName(i) : "нет";
@@ -278,7 +277,6 @@ internal sealed class SettingsWindow : Window
             ReminderColumns = _reminderColumns.Where(c => c.Box.IsChecked == true).Select(c => c.Name).ToList(),
             DarkTheme = _darkTheme.IsChecked == true,
             CheckUpdates = _checkUpdates.IsChecked == true,
-            UpdateHour = Math.Max(0, _updateHour.SelectedIndex),
             CheckIntervalMinutes = AppSettings.IntervalChoices[Math.Max(0, _interval.SelectedIndex)],
             Position = Positions[Math.Max(0, _position.SelectedIndex)].Value,
             AutoCloseSeconds = autoClose,
