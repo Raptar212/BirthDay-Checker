@@ -62,16 +62,21 @@ public static class ReminderText
     /// Text of the one Windows notification: one event line by line, several one line each,
     /// and "и ещё N" for those that don't fit into <paramref name="maxLength"/>.
     /// <paramref name="bullet"/> starts each of several events, so a wrapped line doesn't run into the next one.
+    /// <paramref name="todayMark"/> follows the name of an event due today.
     /// </summary>
-    public static string Notification(IReadOnlyList<Occurrence> items, IReadOnlyList<string>? columns = null, int maxLength = MaxNotificationLength, string bullet = "")
+    public static string Notification(IReadOnlyList<Occurrence> items, IReadOnlyList<string>? columns = null, int maxLength = MaxNotificationLength,
+        string bullet = "", string todayMark = "")
     {
         var nl = Environment.NewLine;
         var text = "";
         for (int i = 0; i < items.Count; i++)
         {
+            var lines = Lines(items[i], columns);
+            if (items[i].DaysLeft == 0)
+                lines = [lines[0] + todayMark, .. lines.Skip(1)];
             var line = items.Count == 1
-                ? Describe(items[i], columns)
-                : bullet + string.Join(", ", Lines(items[i], columns)).ReplaceLineEndings(" ");
+                ? string.Join(nl, lines)
+                : bullet + string.Join(", ", lines).ReplaceLineEndings(" ");
             int rest = items.Count - i - 1;
             var tail = rest > 0 ? $"{nl}и ещё {rest}" : "";
             if (i == 0 && line.Length + tail.Length > maxLength)
