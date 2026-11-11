@@ -97,6 +97,18 @@ public class ReminderTextTests
     }
 
     [Fact]
+    public void Notification_TodayMark_AfterTodaysNamesOnly_NoneByDefault()
+    {
+        var nl = Environment.NewLine;
+        var today = Upcoming.Next(new Entry("Мария", "Праздник", new FixedDate(6, 8)), Today);
+        var items = new[] { today, Full() };
+
+        Assert.Equal($"• Мария 🎉, 08.06{nl}• Иван Тестов, 10.06", ReminderText.Notification(items, [], bullet: "• ", todayMark: " 🎉"));
+        Assert.Equal($"• Мария, 08.06{nl}• Иван Тестов, 10.06", ReminderText.Notification(items, [], bullet: "• "));
+        Assert.Equal($"Мария 🎉{nl}08.06{nl}Праздник", ReminderText.Notification([today], ["Событие"], todayMark: " 🎉"));
+    }
+
+    [Fact]
     public void Notification_TooMany_EndsWithCount_AndFits()
     {
         var items = Enumerable.Range(0, 40).Select(_ => Full()).ToList();

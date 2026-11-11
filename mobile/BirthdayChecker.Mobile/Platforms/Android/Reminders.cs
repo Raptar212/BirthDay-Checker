@@ -99,7 +99,8 @@ public static class Reminders
 				Toast.MakeText(context, "Уведомления выключены", ToastLength.Short)!.Show(); // Show would do nothing
 			var columns = AppSettings.Load(SettingsPath).ReminderColumns ?? DefaultColumns;
 			// The bullet marks where each event starts: the shade drops empty lines and bold, so only a visible mark works (BDC-52).
-			Show(context, ReminderText.Notification(due, columns, 2000, "• "), [.. due.Select(o => o.Entry.Id)]);
+			// 🎉 marks today's events, as on the PC; the shade drops color spans, so no plate as in the PC popup (BDC-71).
+			Show(context, ReminderText.Notification(due, columns, 2000, "• ", " 🎉"), [.. due.Select(o => o.Entry.Id)]);
 		}
 		SaveState(state); // after showing, as on the PC: a failed show keeps the catch-up window
 	}
