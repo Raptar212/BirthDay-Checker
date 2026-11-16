@@ -385,7 +385,7 @@ internal sealed class TrayApp : IDisposable
             // A timer tick must not shrink or close the list a manual check has just opened; midnight may.
             bool inReach = manual || (_windowInReach && _window is not null && _shownDay == today);
             var due = (inReach ? Upcoming.InReach(entries, today) : Upcoming.Due(entries, today, state.CatchUpSince))
-                .Where(o => !state.IsDismissed(o.Entry.Id, today) && (manual || !state.IsSnoozed(o.Entry.Id, now)))
+                .Where(o => manual || (!state.IsDismissed(o.Entry.Id, today) && !state.IsSnoozed(o.Entry.Id, now)))
                 .ToList();
 
             if (due.Count == 0)
