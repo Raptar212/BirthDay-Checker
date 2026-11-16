@@ -35,7 +35,7 @@ public static class DailyReminder
 
     /// <summary>
     /// The widget's "check now", as the PC's manual check: any time of day, everything in reach
-    /// (<see cref="Upcoming.InReach"/>), snoozes ignored, "not today" kept. It counts as the day's check.
+    /// (<see cref="Upcoming.InReach"/>), snoozes and "not today" ignored (both stay saved). It counts as the day's check.
     /// </summary>
     public static (IReadOnlyList<Occurrence> Due, TrayState State) CheckNow(
         IEnumerable<Entry> entries, TrayState state, DateTime now)
@@ -44,8 +44,7 @@ public static class DailyReminder
             state = state with { Snoozed = state.Snoozed.Where(s => s.Value > now).ToDictionary() };
         var today = DateOnly.FromDateTime(now);
         state = state.StartDay(today);
-        var due = Upcoming.InReach(entries, today).Where(o => !state.IsDismissed(o.Entry.Id, today)).ToList();
-        return (due, state);
+        return (Upcoming.InReach(entries, today).ToList(), state);
     }
 
     /// <summary>

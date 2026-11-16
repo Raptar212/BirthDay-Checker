@@ -43,7 +43,7 @@ public class DailyReminderTests
     }
 
     [Fact]
-    public void CheckNow_BeforeTime_ShowsInReach_IgnoresSnooze_KeepsNotToday()
+    public void CheckNow_BeforeTime_ShowsInReach_IgnoresSnoozeAndNotToday()
     {
         var today = Birthday(6, 10);
         var soon = Birthday(6, 15, Reminder.Week1); // in reach, but not due exactly today
@@ -52,7 +52,8 @@ public class DailyReminderTests
         var state = new TrayState { LastChecked = Today.AddDays(-1) }
             .Snooze(today.Id, T(9), T(7)).Dismiss(dismissed.Id, Today);
         var (due, after) = DailyReminder.CheckNow([today, soon, dismissed, far], state, T(8));
-        Assert.Equal([today, soon], due.Select(o => o.Entry));
+        Assert.Equal([today, dismissed, soon], due.Select(o => o.Entry));
+        Assert.True(after.IsDismissed(dismissed.Id, Today)); // still hidden from the timed checks
         Assert.Equal(Today, after.LastChecked);
         Assert.Equal(Today.AddDays(-1), after.CatchUpSince);
     }
